@@ -1,0 +1,22 @@
+﻿column,description,units
+id,plant tag identification number,NA
+spp,"species (Tri = Trillium, Mai = Maianthemum, Ari = Arisaema)",NA
+plot,"plot number (3, 5, 7)",NA
+subplot,subplot number (1-36),NA
+gm.trt,"Alliaria treatment (weeded, ambient)",NA
+canopy,"measurement period (open, closed)",NA
+anet,net photosynthesis rate,umol m^-2 s^-1
+gsw,stomatal conductance to water,mol m^-2 s^-1
+l,stomatal limitation of net photosynthesis,unitless
+ci.ca,ratio of leaf intercellular co2 to atmospheric co2,unitless
+iwue,intrinsic water use efficience,umol mol^-1
+vcmax,maximum rate of Rubisco carboxylation,umol m^-2 s^-1
+vcmax25,"maximum rate of Rubisco carboxylation, standardized to 25degC",umol m^-2 s^-1
+jmax,maximum rate of electron transport for RuBP regeneration,umol m^-2 s^-1
+jmax25,"maximum rate of electron transport for RuBP regeneration, standardized to 25degC",umol m^-2 s^-1
+jmax.vcmax,ratio of jmax25 to vcmax25,unitless
+SPAD,relative chlorophyll content,unitless
+phosphate_ppm,soil phosphate availability,ppm
+nitrate_ppm,soil nitrate availability,ppm
+ammonium_ppm,soil ammonium availability,ppm
+inorg_n_ppm,soil inorganic nitrogen availability (soil nitrate + soil ammonium availability),ppm
