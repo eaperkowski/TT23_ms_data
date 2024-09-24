@@ -450,7 +450,6 @@ emmeans(vcmax.tri, pairwise~canopy, type = "response")
 # % change canopy
 (23.690 - 99.356) / 99.356 * 100
 
-
 # What is the mean +/- SD of Tri Vcmax25?
 df %>%
   filter(spp == "Tri") %>%
@@ -481,7 +480,7 @@ emmeans(vcmax.mai, pairwise~canopy, type = "response")
 emmeans(vcmax.mai, pairwise~gm.trt, type = "response")
 
 # % change canopy
-(25.081 - 58.061) / 58.061 * 100
+(25.082 - 58.061) / 58.061 * 100
 
 # What is the mean +/- SD of Tri Vcmax25?
 df %>%
@@ -543,9 +542,7 @@ r.squaredGLMM(jmax.mai)
 # Pairwise comparisons
 emmeans(jmax.mai, pairwise~canopy, type = "response")
 emmeans(jmax.mai, pairwise~gm.trt, type = "response")
-
 cld(emmeans(jmax.mai, pairwise~canopy*gm.trt))
-
 
 # % change canopy
 (43.887 - 102.424) / 102.424 * 100
@@ -583,10 +580,10 @@ emmeans(jmax.vcmax.tri, pairwise~canopy)
 ##############################################################################
 ## Jmax : Vcmax - Mai
 ##############################################################################
-df$jmax.vcmax[c(113, 218, 219)] <- NA
+df$jmax25.vcmax25[c(219)] <- NA
 
 jmax.vcmax.mai <- lmer(
-  jmax.vcmax ~ gm.trt * canopy + (1 | plot), data = subset(df, spp == "Mai"))
+  jmax25.vcmax25 ~ gm.trt * canopy + (1 | plot), data = subset(df, spp == "Mai"))
 
 # Check model assumptions
 plot(jmax.vcmax.mai)
@@ -608,7 +605,7 @@ emmeans(jmax.vcmax.mai, pairwise~gm.trt)
 cld(emmeans(jmax.vcmax.mai, pairwise~canopy*gm.trt))
 
 # % change canopy
-(1.702 - 1.808) / 1.808 * 100 
+(1.713 - 1.797) / 1.797 * 100 
 
 # % change gm.trt
 (1.73 - 1.78) / 1.78 * 100
@@ -662,9 +659,6 @@ soil.phosphate.table <- data.frame(Anova(phosphate)) %>%
 
 table1 <- soil.nitrogen.table %>% full_join(soil.nitrate.table) %>% 
   full_join(soil.ammonium.table) %>% full_join(soil.phosphate.table)
-
-write.csv(table1, "../drafts/tables/TT23_tableS1_soil_nutrients.csv",
-          row.names = FALSE)
 
 ##############################################################################
 ## Write Table 2: Gas exchange
@@ -765,9 +759,6 @@ table2 <- anet.tri.table %>% full_join(gsw.tri.table) %>%
   full_join(anet.mai.table) %>% full_join(gsw.mai.table) %>% 
   full_join(l.mai.table) %>% full_join(spad.mai.table)
 
-write.csv(table2, "../drafts/tables/TT23_table2_gas_exchange.csv",
-          row.names = FALSE)
-
 ##############################################################################
 ## Write Table 3: Indices of photosynthetic capacity
 ##############################################################################
@@ -839,6 +830,3 @@ jvmax.mai <- data.frame(Anova(jmax.vcmax.mai)) %>%
 
 table3 <- vcmax.tri %>% full_join(jmax.tri) %>%  full_join(jvmax.tri) %>% 
   full_join(vcmax.mai) %>%  full_join(jmax.mai) %>% full_join(jvmax.mai)
-
-write.csv(table3, "../drafts/tables/TT23_table3_photoCapacity.csv", 
-          row.names = FALSE)
