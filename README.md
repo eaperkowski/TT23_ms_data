@@ -12,3 +12,5 @@ Repository contents:
 `tables` = folder contents include ANOVA outputs from `scripts/TT23_analyses.R` and are the tables included in Perkowski et al. (in prep)
 
 For all questions and requests about data usage, please contact Evan Perkowski at [evan.a.perkowski@ttu.edu](mailto:evan.a.perkowski@ttu.edu).
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.13862912.svg)](https://doi.org/10.5281/zenodo.13862912)
