@@ -48,14 +48,14 @@ df$gsw[c(53, 91)] <- NA
 df$SPAD[111] <- NA
 df$vcmax25[180] <- NA
 df$jmax25[c(142, 180)] <- NA
-df$jmax.vcmax[c(113, 181, 218, 219)] <- NA
+df$jmax25.vcmax25[c(181, 219)] <- NA
 
 ## Create models for soil data
 nitrate <- lmer(
   nitrate_ppm ~ gm.trt * canopy + (1 | plot), data = df.soil)
 
 ammonium <- lmer(
-  log(ammonium_ppm) ~ gm.trt * canopy + (1 | plot), data = df.soil)
+  sqrt(ammonium_ppm) ~ gm.trt * canopy + (1 | plot), data = df.soil)
 
 phosphate <- lmer(
   phosphate_ppm ~ gm.trt * canopy + (1 | plot), data = df.soil)
@@ -107,10 +107,10 @@ jmax.mai <- lmer(
   log(jmax25) ~ gm.trt * canopy + (1 | plot), data = subset(df, spp == "Mai"))
 
 jmax.vcmax.tri <- lmer(
-  jmax.vcmax ~ gm.trt * canopy + (1 | plot), data = subset(df, spp == "Tri"))
+  jmax25.vcmax25 ~ gm.trt * canopy + (1 | plot), data = subset(df, spp == "Tri"))
 
 jmax.vcmax.mai <- lmer(
-  jmax.vcmax ~ gm.trt * canopy + (1 | plot), data = subset(df, spp == "Mai"))
+  jmax25.vcmax25 ~ gm.trt * canopy + (1 | plot), data = subset(df, spp == "Mai"))
 
 ## Add code for facet labels
 facet.labs <- c("Trillium spp.", "M. racemosum")
@@ -159,12 +159,12 @@ nitrate_plot
 ##############################################################################
 # Prep
 ammonium_results <- cld(emmeans(ammonium, pairwise~canopy*gm.trt),
-                       reversed = TRUE, Letters = LETTERS) %>%
+                        reversed = TRUE, Letters = LETTERS) %>%
   mutate(.group = trimws(.group, "both"))
 
 # Plot
 ammonium_plot <- ggplot(data = df.soil,
-                       aes(x = canopy, y = ammonium_ppm, fill = gm.trt)) +
+                        aes(x = canopy, y = ammonium_ppm, fill = gm.trt)) +
   stat_boxplot(linewidth = 0.75, geom = "errorbar", width = 0.25, 
                position = position_dodge(width = 0.75)) +
   geom_boxplot(position = position_dodge(0.75),
@@ -465,7 +465,7 @@ gsw_tri_plot
 Anova(gsw.mai)
 
 gsw_mai_results <- cld(emmeans(gsw.mai, ~canopy*gm.trt, type = "response"), 
-                        Letters = LETTERS, reversed = TRUE, alpha = 0.06) %>% 
+                        Letters = LETTERS, reversed = TRUE, alpha = 0.055) %>% 
   data.frame() %>% mutate(.group = trimws(.group, "both"))
 
 gsw_mai_plot <- ggplot(data = subset(df, spp == "Mai"),
@@ -573,8 +573,7 @@ l_mai_plot <- ggplot(data = subset(df, spp == "Mai"),
         legend.text = element_text(hjust = 0),
         strip.background = element_blank(),
         strip.text = element_text(face = "italic", size = 18),
-        panel.grid.minor.y = element_blank()) +
-  guides(fill = "none")
+        panel.grid.minor.y = element_blank())
 l_mai_plot
 
 ##############################################################################
@@ -739,11 +738,11 @@ jmax_mai_plot
 Anova(jmax.vcmax.tri)
 
 jvmax_tri_results <- cld(emmeans(jmax.vcmax.tri, ~gm.trt*canopy, type = "response"), 
-                        Letters = LETTERS, reversed = TRUE) %>% 
+                        Letters = LETTERS) %>% 
   data.frame() %>% mutate(.group = trimws(.group, "both"))
 
 jvmax_tri_plot <- ggplot(data = subset(df, spp == "Tri"),
-                        aes(x = canopy, y = jmax.vcmax, fill = gm.trt)) +
+                        aes(x = canopy, y = jmax25.vcmax25, fill = gm.trt)) +
   stat_boxplot(linewidth = 0.75, geom = "errorbar", width = 0.25, 
                position = position_dodge(width = 0.75)) +
   geom_boxplot(position = position_dodge(0.75),
@@ -782,7 +781,7 @@ jvmax_mai_results <- cld(emmeans(jmax.vcmax.mai, ~gm.trt*canopy, type = "respons
   data.frame() %>% mutate(.group = trimws(.group, "both"))
 
 jvmax_mai_plot <- ggplot(data = subset(df, spp == "Mai"),
-                        aes(x = canopy, y = jmax.vcmax, fill = gm.trt)) +
+                        aes(x = canopy, y = jmax25.vcmax25, fill = gm.trt)) +
   stat_boxplot(linewidth = 0.75, geom = "errorbar", width = 0.25, 
                position = position_dodge(width = 0.75)) +
   geom_boxplot(position = position_dodge(0.75),
@@ -894,108 +893,64 @@ spad_mai_plot
 ##############################################################################
 ## Figure 1: Soil nutrients 
 ##############################################################################
-png("../drafts/figs/TT23_fig1_soilNutrients.png", width = 12, height = 4.5,
-    units = "in", res = 600)
+# png("../plots/TT23_fig1_soilNutrients.png", width = 12, height = 4.5,
+#     units = "in", res = 600)
 ggarrange(nitrogen_plot, phosphate_plot, soil_np_plot, ncol = 3, nrow = 1, 
           hjust = 0, common.legend = TRUE, legend = "bottom",
           align = "hv", labels = c("(a)", "(b)", "(c)", "(d)"), 
           font.label = list(size = 18))
-dev.off()
+# dev.off()
 
 ##############################################################################
-## Figure 1: Soil moisture
+## Figure 2: Soil moisture
 ##############################################################################
-png("../drafts/figs/TT23_fig2_soilMoisture.png",
-    width = 8, height = 4.5, units = "in", res = 600)
+# png("../plots/TT23_fig2_soilMoisture.png",
+#     width = 8, height = 4.5, units = "in", res = 600)
 sm_plot
-dev.off()
+# dev.off()
 
 ##############################################################################
-## Figure 2: Gas exchange
+## Figure 3: Gas exchange
 ##############################################################################
-png("../drafts/figs/TT23_fig3_gasExchange.png", width = 8, height = 12,
-    units = "in", res = 600)
+# png("../plots/TT23_fig3_gasExchange.png", width = 8, height = 12,
+#     units = "in", res = 600)
 ggarrange(anet_tri_plot, anet_mai_plot, gsw_tri_plot, gsw_mai_plot,
           l_tri_plot, l_mai_plot, common.legend = TRUE, 
           hjust = 0, legend = "bottom", ncol = 2, nrow = 3, align = "hv",
           labels = c("(a)", "(b)", "(c)", "(d)", "(e)", "(f)"), 
           font.label = list(size = 18))
-dev.off()
+# dev.off()
 
 ##############################################################################
-## Figure 3: Photosynthetic capacity
+## Figure 4: Photosynthetic capacity
 ##############################################################################
-png("../drafts/figs/TT23_fig4_photoCapacity.png", 
-    width = 8, height = 12, units = "in", res = 600)
+# png("../plots/TT23_fig4_photoCapacity.png", 
+#     width = 8, height = 12, units = "in", res = 600)
 ggarrange(vcmax_tri_plot, vcmax_mai_plot, jmax_tri_plot, jmax_mai_plot, 
           jvmax_tri_plot, jvmax_mai_plot, common.legend = TRUE, 
           legend = "bottom", ncol = 2, nrow = 3, align = "hv", hjust = 0,
           labels = c("(a)", "(b)", "(c)", "(d)", "(e)", "(f)"), 
           font.label = list(size = 18))
-dev.off()
+# dev.off()
 
 ##############################################################################
 ## Figure S1: Soil nitrogen components
 ##############################################################################
-png("../drafts/figs/TT23_figS1_nitrate_ammonium.png", 
-    width = 10, height = 4.5, units = "in", res = 600)
+# png("../plots/TT23_figS1_nitrate_ammonium.png", 
+#     width = 10, height = 4.5, units = "in", res = 600)
 ggarrange(nitrate_plot, ammonium_plot,
           common.legend = TRUE, legend = "right", ncol = 2, nrow = 1, 
           align = "hv", font.label = list(size = 18), hjust = 0,
           labels = c("(a)", "(b)"))
-dev.off()
+# dev.off()
 
 ##############################################################################
 ## Figure S2: Chlorophyll fluorescence
 ##############################################################################
-png("../drafts/figs/TT23_figS2_chlorophyll.png", 
-    width = 10, height = 4.5, units = "in", res = 600)
+# png("../plots/TT23_figS2_chlorophyll.png", 
+#     width = 10, height = 4.5, units = "in", res = 600)
 ggarrange(spad_tri_plot, spad_mai_plot,
           common.legend = TRUE, legend = "right", ncol = 2, nrow = 1, 
           align = "hv", font.label = list(size = 18), hjust = 0,
           labels = c("(a)", "(b)"))
-dev.off()
-
-##############################################################################
-## ESA talk figure: net photosynthesis
-##############################################################################
-png("../drafts/figs/TT23_ESAtalk_anet.png", 
-    width = 10, height = 4.5, units = "in", res = 600)
-ggarrange(anet_tri_plot, anet_mai_plot,
-          common.legend = TRUE, legend = "right", ncol = 2, nrow = 1, 
-          align = "hv", font.label = list(size = 18), hjust = 0,
-          labels = c("(a)", "(b)"))
-dev.off()
-
-##############################################################################
-## ESA talk figure: 
-##############################################################################
-png("../drafts/figs/TT23_ESAtalk_tri_gasEx.png", 
-    width = 10, height = 4.5, units = "in", res = 600)
-ggarrange(vcmax_tri_plot, jmax_tri_plot,
-          common.legend = TRUE, legend = "right", ncol = 2, nrow = 1, 
-          align = "hv", font.label = list(size = 18), hjust = 0,
-          labels = c("(a)", "(b)"))
-dev.off()
-
-##############################################################################
-## ESA talk figure: 
-##############################################################################
-png("../drafts/figs/TT23_ESAtalk_mai_gasEx.png", 
-    width = 10, height = 4.5, units = "in", res = 600)
-ggarrange(gsw_mai_plot, l_mai_plot,
-          common.legend = TRUE, legend = "right", ncol = 2, nrow = 1, 
-          align = "hv", font.label = list(size = 18), hjust = 0,
-          labels = c("(a)", "(b)"))
-dev.off()
-
-##############################################################################
-## ESA talk figure: soil resources
-##############################################################################
-png("../drafts/figs/TT23_ESAtalk_soil_conclusions.png", 
-    width = 6, height = 9, units = "in", res = 600)
-ggarrange(nitrogen_plot, sm_plot,
-          common.legend = TRUE, legend = "bottom", ncol = 1, nrow = 2, 
-          align = "hv", hjust = 0)
-dev.off()
-
+# dev.off()

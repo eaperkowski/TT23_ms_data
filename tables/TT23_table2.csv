@@ -1,0 +1,4 @@
+"treatment","Df","chisq_vcmax.tri","p_vcmax.tri","chisq_jmax.tri","p_jmax.tri","chisq_jvmax.tri","p_jvmax.tri","chisq_vcmax.mai","p_vcmax.mai","chisq_jmax.mai","p_jmax.mai","chisq_jvmax.mai","p_jvmax.mai"
+"gm.trt",1,1.09,"0.296",4.008,"0.045",2.622,0.105,0.161,"0.688",0.37,"0.543",2.51,0.113
+"canopy",1,1585.012,"<0.001",2001.653,"<0.001",7.314,0.007,284.148,"<0.001",391.314,"<0.001",8.456,0.004
+"gm.trt:canopy",1,1.973,"0.16",5.417,"0.02",0.753,0.386,0.219,"0.64",0.045,"0.832",3.221,0.073

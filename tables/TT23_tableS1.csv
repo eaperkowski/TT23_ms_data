@@ -1,0 +1,4 @@
+"treatment","Df","chisq_soilN","p_soilN","chisq_nitrate","p_nitrate","chisq_ammonium","p_ammonium","chisq_phosphate","p_phosphate"
+"gm.trt",1,0.8,"0.371",2.609,"0.106",0.804,0.37,2.59,0.108
+"canopy",1,49.618,"<0.001",63.73,"<0.001",1.294,0.255,10.355,0.001
+"gm.trt:canopy",1,0.887,"0.346",1.719,"0.19",3.119,0.077,0.297,0.586

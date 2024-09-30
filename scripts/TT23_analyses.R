@@ -188,7 +188,7 @@ Anova(sm_model)
 
 ## Post hoc tests
 test(emtrends(sm_model, ~1, "doy"))
-emmeans(sm_model, pairwise~trt)
+emmeans(sm_model, pairwise~gm.trt)
 
 ##############################################################################
 ## Anet - Tri
@@ -224,7 +224,7 @@ emmeans(anet.tri, pairwise~gm.trt, type = "response")
 ##############################################################################
 ## Anet - Mai
 ##############################################################################
-df$anet[91] <- NA
+df$anet[c(91)] <- NA
 
 anet.mai <- lmer(
   anet ~ gm.trt * canopy  + (1 | plot), data = subset(df, spp == "Mai"))
@@ -553,10 +553,10 @@ cld(emmeans(jmax.mai, pairwise~canopy*gm.trt))
 ##############################################################################
 ## Jmax : Vcmax - Tri
 ##############################################################################
-df$jmax.vcmax[181] <- NA
+df$jmax25.vcmax25[181] <- NA
 
 jmax.vcmax.tri <- lmer(
-  jmax.vcmax ~ gm.trt * canopy + (1 | plot), data = subset(df, spp == "Tri"))
+  jmax25.vcmax25 ~ gm.trt * canopy + (1 | plot), data = subset(df, spp == "Tri"))
 
 # Check model assumptions
 plot(jmax.vcmax.tri)
@@ -611,58 +611,10 @@ cld(emmeans(jmax.vcmax.mai, pairwise~canopy*gm.trt))
 (1.73 - 1.78) / 1.78 * 100
 
 ##############################################################################
-## Write Table 1: Soil nutrients
-##############################################################################
-soil.nitrogen.table <- data.frame(Anova(plant_availableN)) %>%
-  mutate(treatment = row.names(.),
-         chisq_soilN = Chisq,
-         p_soilN = Pr..Chisq.,
-         across(chisq_soilN:p_soilN, \(x) round(x, digits = 3)),
-         chisq_soilN = ifelse(chisq_soilN <0.001 & chisq_soilN >= 0, 
-                                "<0.001", chisq_soilN),
-         p_soilN = ifelse(p_soilN <0.001 & p_soilN >= 0, 
-                               "<0.001", p_soilN)) %>%
-  dplyr::select(treatment, Df, chisq_soilN, p_soilN)
-
-soil.nitrate.table <- data.frame(Anova(nitrate)) %>%
-  mutate(treatment = row.names(.),
-         chisq_nitrate = Chisq,
-         p_nitrate = Pr..Chisq.,
-         across(chisq_nitrate:p_nitrate, \(x) round(x, digits = 3)),
-         chisq_nitrate = ifelse(chisq_nitrate < 0.001 & chisq_nitrate >= 0, 
-                              "<0.001", chisq_nitrate),
-         p_nitrate = ifelse(p_nitrate <0.001 & p_nitrate >= 0, 
-                          "<0.001", p_nitrate)) %>%
-  dplyr::select(treatment, chisq_nitrate, p_nitrate)
-
-soil.ammonium.table <- data.frame(Anova(ammonium)) %>%
-  mutate(treatment = row.names(.),
-         chisq_ammonium = Chisq,
-         p_ammonium = Pr..Chisq.,
-         across(chisq_ammonium:p_ammonium, \(x) round(x, digits = 3)),
-         chisq_ammonium = ifelse(chisq_ammonium < 0.001 & chisq_ammonium >= 0, 
-                                "<0.001", chisq_ammonium),
-         p_ammonium = ifelse(p_ammonium <0.001 & p_ammonium >= 0, 
-                            "<0.001", p_ammonium)) %>%
-  dplyr::select(treatment, chisq_ammonium, p_ammonium)
-
-soil.phosphate.table <- data.frame(Anova(phosphate)) %>%
-  mutate(treatment = row.names(.),
-         chisq_phosphate = Chisq,
-         p_phosphate = Pr..Chisq.,
-         across(chisq_phosphate:p_phosphate, \(x) round(x, digits = 3)),
-         chisq_phosphate = ifelse(chisq_phosphate < 0.001 & chisq_phosphate >= 0, 
-                                 "<0.001", chisq_phosphate),
-         p_phosphate = ifelse(p_phosphate <0.001 & p_phosphate >= 0, 
-                             "<0.001", p_phosphate)) %>%
-  dplyr::select(treatment, chisq_phosphate, p_phosphate)
-
-table1 <- soil.nitrogen.table %>% full_join(soil.nitrate.table) %>% 
-  full_join(soil.ammonium.table) %>% full_join(soil.phosphate.table)
-
-##############################################################################
 ## Write Table 2: Gas exchange
 ##############################################################################
+
+# Net photosynthesis (Trillium)
 anet.tri.table <- data.frame(Anova(anet.tri)) %>%
   mutate(treatment = row.names(.),
          chisq_anet.tri = Chisq,
@@ -674,6 +626,7 @@ anet.tri.table <- data.frame(Anova(anet.tri)) %>%
                           "<0.001", p_anet.tri)) %>%
   dplyr::select(treatment, Df, chisq_anet.tri, p_anet.tri)
 
+# Net photosynthesis (Maianthemum)
 anet.mai.table <- data.frame(Anova(anet.mai)) %>%
   mutate(treatment = row.names(.),
          chisq_anet.mai = Chisq,
@@ -685,6 +638,7 @@ anet.mai.table <- data.frame(Anova(anet.mai)) %>%
                              "<0.001", p_anet.mai)) %>%
   dplyr::select(treatment, chisq_anet.mai, p_anet.mai)
 
+# Stomatal conductance (Trillium)
 gsw.tri.table <- data.frame(Anova(gsw.tri)) %>%
   mutate(treatment = row.names(.),
          chisq_gsw.tri = Chisq,
@@ -696,6 +650,7 @@ gsw.tri.table <- data.frame(Anova(gsw.tri)) %>%
                             "<0.001", p_gsw.tri)) %>%
   dplyr::select(treatment, chisq_gsw.tri, p_gsw.tri)
 
+# Stomatal conductance (Maianthemum)
 gsw.mai.table <- data.frame(Anova(gsw.mai)) %>%
   mutate(treatment = row.names(.),
          chisq_gsw.mai = Chisq,
@@ -707,7 +662,7 @@ gsw.mai.table <- data.frame(Anova(gsw.mai)) %>%
                             "<0.001", p_gsw.mai)) %>%
   dplyr::select(treatment, chisq_gsw.mai, p_gsw.mai)
 
-
+# Stomatal limitation (Trillium)
 l.tri.table <- data.frame(Anova(l.tri)) %>%
   mutate(treatment = row.names(.),
          chisq_l.tri = Chisq,
@@ -720,6 +675,7 @@ l.tri.table <- data.frame(Anova(l.tri)) %>%
                           "<0.001", p_l.tri)) %>%
   dplyr::select(treatment, chisq_l.tri, p_l.tri)
 
+# Stomatal limitation (Maianthemum)
 l.mai.table <- data.frame(Anova(l.mai)) %>%
   mutate(treatment = row.names(.),
          chisq_l.mai = Chisq,
@@ -732,6 +688,7 @@ l.mai.table <- data.frame(Anova(l.mai)) %>%
                           "<0.001", p_l.mai)) %>%
   dplyr::select(treatment, chisq_l.mai, p_l.mai)
 
+# SPAD (Trillium)
 spad.tri.table <- data.frame(Anova(spad.tri)) %>%
   mutate(treatment = row.names(.),
          chisq_spad.tri = Chisq,
@@ -743,6 +700,7 @@ spad.tri.table <- data.frame(Anova(spad.tri)) %>%
                              "<0.001", p_spad.tri)) %>%
   dplyr::select(treatment, Df, chisq_spad.tri, p_spad.tri)
 
+# SPAD (Maianthemum)
 spad.mai.table <- data.frame(Anova(spad.mai)) %>%
   mutate(treatment = row.names(.),
          chisq_spad.mai = Chisq,
@@ -754,14 +712,18 @@ spad.mai.table <- data.frame(Anova(spad.mai)) %>%
                              "<0.001", p_spad.mai)) %>%
   dplyr::select(treatment, chisq_spad.mai, p_spad.mai)
 
+# Concatenate Table 2
 table2 <- anet.tri.table %>% full_join(gsw.tri.table) %>% 
   full_join(l.tri.table) %>% full_join(spad.tri.table) %>% 
   full_join(anet.mai.table) %>% full_join(gsw.mai.table) %>% 
   full_join(l.mai.table) %>% full_join(spad.mai.table)
+# write.csv(table2, "../tables/TT23_table2.csv", row.names = FALSE)
 
 ##############################################################################
 ## Write Table 3: Indices of photosynthetic capacity
 ##############################################################################
+
+# Temp. standardized maximum rate of Rubisco carboyxlation (Trillium)
 vcmax.tri <- data.frame(Anova(vcmax.tri)) %>%
   mutate(treatment = row.names(.),
          chisq_vcmax.tri = Chisq,
@@ -773,6 +735,7 @@ vcmax.tri <- data.frame(Anova(vcmax.tri)) %>%
                              "<0.001", p_vcmax.tri)) %>%
   dplyr::select(treatment, Df, chisq_vcmax.tri, p_vcmax.tri)
 
+# Temp. standardized maximum rate of Rubisco carboxylation (Maianthemum)
 vcmax.mai <- data.frame(Anova(vcmax.mai)) %>%
   mutate(treatment = row.names(.),
          chisq_vcmax.mai = Chisq,
@@ -784,6 +747,8 @@ vcmax.mai <- data.frame(Anova(vcmax.mai)) %>%
                              "<0.001", p_vcmax.mai)) %>%
   dplyr::select(treatment, chisq_vcmax.mai, p_vcmax.mai)
 
+# Temp. standardized maximum rate of electron transport for RuBP 
+# regeneration (Trillium)
 jmax.tri <- data.frame(Anova(jmax.tri)) %>%
   mutate(treatment = row.names(.),
          chisq_jmax.tri = Chisq,
@@ -795,6 +760,8 @@ jmax.tri <- data.frame(Anova(jmax.tri)) %>%
                               "<0.001", p_jmax.tri)) %>%
   dplyr::select(treatment, Df, chisq_jmax.tri, p_jmax.tri)
 
+# Temp. standardized maximum rate of electron transport for RuBP 
+# regeneration (Maianthemum)
 jmax.mai <- data.frame(Anova(jmax.mai)) %>%
   mutate(treatment = row.names(.),
          chisq_jmax.mai = Chisq,
@@ -806,6 +773,7 @@ jmax.mai <- data.frame(Anova(jmax.mai)) %>%
                               "<0.001", p_jmax.mai)) %>%
   dplyr::select(treatment, chisq_jmax.mai, p_jmax.mai)
 
+# The ratio of Jmax25 to Vcmax25 (Trillium) 
 jvmax.tri <- data.frame(Anova(jmax.vcmax.tri)) %>%
   mutate(treatment = row.names(.),
          chisq_jvmax.tri = Chisq,
@@ -817,6 +785,7 @@ jvmax.tri <- data.frame(Anova(jmax.vcmax.tri)) %>%
                              "<0.001", p_jvmax.tri)) %>%
   dplyr::select(treatment, Df, chisq_jvmax.tri, p_jvmax.tri)
 
+# The ratio of Jmax25 to Vcmax25 (Maianthemum)
 jvmax.mai <- data.frame(Anova(jmax.vcmax.mai)) %>%
   mutate(treatment = row.names(.),
          chisq_jvmax.mai = Chisq,
@@ -828,5 +797,88 @@ jvmax.mai <- data.frame(Anova(jmax.vcmax.mai)) %>%
                              "<0.001", p_jvmax.mai)) %>%
   dplyr::select(treatment, chisq_jvmax.mai, p_jvmax.mai)
 
+# Concatenate Table 3
 table3 <- vcmax.tri %>% full_join(jmax.tri) %>%  full_join(jvmax.tri) %>% 
   full_join(vcmax.mai) %>%  full_join(jmax.mai) %>% full_join(jvmax.mai)
+# write.csv(table3, "../tables/TT23_table3.csv", row.names = FALSE)
+
+##############################################################################
+## Write Table S1: Soil nutrients
+##############################################################################
+# Soil inorganic nitrogen
+soil.nitrogen.table <- data.frame(Anova(plant_availableN)) %>%
+  mutate(treatment = row.names(.),
+         chisq_soilN = Chisq,
+         p_soilN = Pr..Chisq.,
+         across(chisq_soilN:p_soilN, \(x) round(x, digits = 3)),
+         chisq_soilN = ifelse(chisq_soilN <0.001 & chisq_soilN >= 0, 
+                              "<0.001", chisq_soilN),
+         p_soilN = ifelse(p_soilN <0.001 & p_soilN >= 0, 
+                          "<0.001", p_soilN)) %>%
+  dplyr::select(treatment, Df, chisq_soilN, p_soilN)
+
+# Soil nitrate availability
+soil.nitrate.table <- data.frame(Anova(nitrate)) %>%
+  mutate(treatment = row.names(.),
+         chisq_nitrate = Chisq,
+         p_nitrate = Pr..Chisq.,
+         across(chisq_nitrate:p_nitrate, \(x) round(x, digits = 3)),
+         chisq_nitrate = ifelse(chisq_nitrate < 0.001 & chisq_nitrate >= 0, 
+                                "<0.001", chisq_nitrate),
+         p_nitrate = ifelse(p_nitrate <0.001 & p_nitrate >= 0, 
+                            "<0.001", p_nitrate)) %>%
+  dplyr::select(treatment, chisq_nitrate, p_nitrate)
+
+# Soil ammonium availability
+soil.ammonium.table <- data.frame(Anova(ammonium)) %>%
+  mutate(treatment = row.names(.),
+         chisq_ammonium = Chisq,
+         p_ammonium = Pr..Chisq.,
+         across(chisq_ammonium:p_ammonium, \(x) round(x, digits = 3)),
+         chisq_ammonium = ifelse(chisq_ammonium < 0.001 & chisq_ammonium >= 0, 
+                                 "<0.001", chisq_ammonium),
+         p_ammonium = ifelse(p_ammonium <0.001 & p_ammonium >= 0, 
+                             "<0.001", p_ammonium)) %>%
+  dplyr::select(treatment, chisq_ammonium, p_ammonium)
+
+# Soil phosphate availability
+soil.phosphate.table <- data.frame(Anova(phosphate)) %>%
+  mutate(treatment = row.names(.),
+         chisq_phosphate = Chisq,
+         p_phosphate = Pr..Chisq.,
+         across(chisq_phosphate:p_phosphate, \(x) round(x, digits = 3)),
+         chisq_phosphate = ifelse(chisq_phosphate < 0.001 & chisq_phosphate >= 0, 
+                                  "<0.001", chisq_phosphate),
+         p_phosphate = ifelse(p_phosphate <0.001 & p_phosphate >= 0, 
+                              "<0.001", p_phosphate)) %>%
+  dplyr::select(treatment, chisq_phosphate, p_phosphate)
+
+# Concatenate table S1
+tableS1 <- soil.nitrogen.table %>% full_join(soil.nitrate.table) %>% 
+  full_join(soil.ammonium.table) %>% full_join(soil.phosphate.table)
+# write.csv(tableS1, "../tables/TT23_table1.csv", row.names = FALSE)
+
+
+##############################################################################
+## Write Table S2: Soil moisture
+##############################################################################
+# Soil moisture
+soil.moisture.table <- data.frame(Anova(sm_model)) %>%
+  mutate(treatment = row.names(.),
+         chisq_soilMoisture = Chisq,
+         p_soilMoisture = Pr..Chisq.,
+         across(chisq_soilMoisture:p_soilMoisture, \(x) round(x, digits = 3)),
+         chisq_soilMoisture = ifelse(chisq_soilMoisture < 0.001 & 
+                                       chisq_soilMoisture >= 0, 
+                                     "<0.001", chisq_soilMoisture),
+         p_soilMoisture = ifelse(p_soilMoisture <0.001 & p_soilMoisture >= 0, 
+                              "<0.001", p_soilMoisture)) %>%
+  dplyr::select(treatment, chisq_soilMoisture, p_soilMoisture)
+
+# Concatenate table S2
+tableS2 <- soil.moisture.table
+# write.csv(tableS2, "../tables/TT23_tableS2.csv", row.names = FALSE)
+
+
+
+

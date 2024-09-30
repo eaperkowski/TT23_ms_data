@@ -1,0 +1,4 @@
+"treatment","chisq_soilMoisture","p_soilMoisture"
+"gm.trt",17.778,"<0.001"
+"doy",310.951,"<0.001"
+"gm.trt:doy",0.272,"0.602"
