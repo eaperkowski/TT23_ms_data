@@ -4,8 +4,10 @@ spp,"species (Tri = Trillium, Mai = Maianthemum, Ari = Arisaema)",NA
 plot,"plot number (3, 5, 7)",NA
 subplot,subplot number (1-36),NA
 gm.trt,"Alliaria treatment (weeded, ambient)",NA
+date,gas exchange measurement date,m/dd/yy
 canopy,"measurement period (open, closed)",NA
 anet,net photosynthesis rate,umol m^-2 s^-1
+ci.ca,intercellular CO2 concentration,umol mol^-1
 gsw,stomatal conductance to water,mol m^-2 s^-1
 l,stomatal limitation of net photosynthesis,unitless
 ci.ca,ratio of leaf intercellular co2 to atmospheric co2,unitless

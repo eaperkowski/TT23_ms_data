@@ -13,20 +13,28 @@ df <- read.csv("../data/TT23_data.csv") %>%
          canopy = factor(canopy, levels = c("open", "closed")))
 head(df)
 
+# How many measurements per ID?
+n_measurements <- df %>%
+  group_by(id, spp, plot, subplot, gm.trt) %>%
+  summarize(n_measurements = length(id)) %>%
+  ungroup() %>%
+  dplyr::select(id, spp, n_meas = n_measurements)
+head(n_measurements)
+
+# Join n measurements into photo traits
+df2 <- df %>%
+  left_join(n_measurements, by = "id") %>%
+  filter(n_meas > 1) %>%
+  dplyr::select(id, spp = spp.x, plot:inorg_n_ppm, n_meas)
+
 # Turn off digit rounding in emmean args
 emm_options(opt.digits = FALSE)
 
-# Helper fxn to change "NaN" to "NA"
-NaN_to_NA <- function(x) ifelse(is.nan(x), NA, x)
-
 ## Read and subset soil dataset
 df.soil <- df %>%
-  group_by(plot, composite, gm.trt, canopy) %>%
-  summarize_at(.vars = vars(phosphate_ppm:inorg_n_ppm),
-               .funs = mean, na.rm = TRUE) %>%
+  distinct(plot, composite, canopy, .keep_all = TRUE) %>%
   mutate(gm.trt = factor(gm.trt, levels = c("ambient", "weeded")),
-         canopy = factor(canopy, levels = c("open", "closed"))) %>%
-  mutate(across(nitrate_ppm:inorg_n_ppm, .fns = NaN_to_NA),
+         canopy = factor(canopy, levels = c("open", "closed")),
          np.ratio = inorg_n_ppm/phosphate_ppm)
 
 ## Read daily soil moisture dataset
@@ -36,7 +44,7 @@ df.sm <- read.csv("../data/TT23_tomst_probe_sm_daily.csv")
 ## N availability (nitrate + ammonium)
 ##############################################################################
 plant_availableN <- lmer(
-  log(inorg_n_ppm) ~ gm.trt * canopy + (1 | plot), data = df.soil)
+  inorg_n_ppm ~ gm.trt * canopy + (1 | plot), data = df.soil)
 
 # Check model assumptions
 plot(plant_availableN)
@@ -52,14 +60,14 @@ Anova(plant_availableN)
 r.squaredGLMM(plant_availableN)
 
 # Pairwise comparisons
-emmeans(plant_availableN, pairwise~canopy, type = "response")
-emmeans(plant_availableN, pairwise~gm.trt, type = "response")
+emmeans(plant_availableN, pairwise~canopy)
+emmeans(plant_availableN, pairwise~gm.trt)
 
 # % change canopy
-(4.10 - 16.97) / 16.97 * 100
+(5.81 - 18.57) / 18.57 * 100
 
 # % change gm.trt
-(9.00 - 7.74) / 7.74 * 100
+(13.417 - 10.965) / 10.965 * 100
 
 ##############################################################################
 ## Phosphate
@@ -88,7 +96,7 @@ emmeans(phosphate, pairwise~gm.trt)
 (0.813 - 1.095) / 1.095 * 100
 
 # % change gm.trt
-(0.88 - 1.03) / 1.03 * 100
+(0.882 - 1.026) / 1.026 * 100
 
 ##############################################################################
 ## Nitrate
@@ -111,15 +119,21 @@ r.squaredGLMM(nitrate)
 
 # Pairwise comparisons
 emmeans(nitrate, pairwise~canopy)
+emmeans(nitrate, pairwise~gm.trt)
 
 # % change nitrate with canopy status
-(5.47 - 18.57) / 18.57 * 100
+(5.465 - 18.573) / 18.573 * 100
+
+# % change nitrate with gm.trt
+
+(13.254 - 10.784) / 10.784 * 100
+
 
 ##############################################################################
 ## Ammonium
 ##############################################################################
 ammonium <- lmer(
-  sqrt(ammonium_ppm) ~ gm.trt * canopy + (1 | plot), data = df.soil)
+  log(ammonium_ppm) ~ gm.trt * canopy + (1 | plot), data = df.soil)
 
 # Check model assumptions
 plot(ammonium)
@@ -140,10 +154,7 @@ cld(emmeans(ammonium, pairwise~canopy*gm.trt, type = "response"))
 ##############################################################################
 ## Soil N:P
 ##############################################################################
-df.soil$np.ratio[54] <- NA
-
-n_to_p_ratio <- lmer(
-  log(np.ratio) ~ gm.trt * canopy + (1 | plot), data = df.soil)
+n_to_p_ratio <- lmer(log(np.ratio) ~ gm.trt * canopy + (1 | plot), data = df.soil)
 
 # Check model assumptions
 plot(n_to_p_ratio)
@@ -163,10 +174,10 @@ emmeans(n_to_p_ratio, pairwise~gm.trt, type = "response")
 emmeans(n_to_p_ratio, pairwise~canopy, type = "response")
 
 # % change due to gm.trt
-(11.76 - 7.8) / 7.8 * 100
+(11.792 - 8.251) / 8.251 * 100
 
 # % change canopy
-(11.8 - 7.8) / 7.8 * 100
+(16.746 - 5.810) / 5.810 * 100
 
 ##############################################################################
 ## Soil moisture (time series) 
@@ -193,8 +204,8 @@ emmeans(sm_model, pairwise~gm.trt)
 ##############################################################################
 ## Anet - Tri
 ##############################################################################
-anet.tri <- lmer(
-  log(anet) ~ gm.trt * canopy + (1 | plot), data = subset(df, spp == "Tri"))
+anet.tri <- lmer(log(anet) ~ gm.trt * canopy + (1 | plot) + (1 | id), 
+  data = subset(df2, spp == "Tri"))
 
 # Check model assumptions
 plot(anet.tri)
@@ -215,19 +226,170 @@ emmeans(anet.tri, pairwise~canopy, type = "response")
 emmeans(anet.tri, pairwise~gm.trt, type = "response")
 
 # % change canopy
-(4.51 - 12.52) / 12.52 * 100
+(4.444 - 12.363) / 12.363 * 100
 
 # % change gm.trt
 (7.19 - 7.86) / 7.86 * 100
-(4.175 - 4.877) / 4.877  # post canopy 
+(4.128 - 4.784) / 4.784  # post canopy 
+
+##############################################################################
+## gsw - Tri
+##############################################################################
+gsw.tri <- lmer(log(gsw) ~ gm.trt * canopy + (1 | plot) + (1 | id), 
+                data = subset(df2, spp == "Tri"))
+
+# Check model assumptions
+plot(gsw.tri)
+qqnorm(residuals(gsw.tri))
+qqline(residuals(gsw.tri))
+densityPlot(residuals(gsw.tri))
+shapiro.test(residuals(gsw.tri))
+outlierTest(gsw.tri)
+
+# Model output
+summary(gsw.tri)
+Anova(gsw.tri)
+r.squaredGLMM(gsw.tri)
+
+# Pairwise comparisons
+emmeans(gsw.tri, pairwise~canopy, type = "response")
+
+# % change canopy
+(0.102 - 0.128) / 0.128 * 100
+
+##############################################################################
+## stomatal limitation - Tri
+##############################################################################
+l.tri <- lmer(l ~ gm.trt * canopy + (1 | plot) + (1 | id), 
+              data = subset(df2, spp == "Tri"))
+
+# Check model assumptions
+plot(l.tri)
+qqnorm(residuals(l.tri))
+qqline(residuals(l.tri))
+densityPlot(residuals(l.tri))
+shapiro.test(residuals(l.tri))
+outlierTest(l.tri)
+
+# Model output
+summary(l.tri)
+Anova(l.tri)
+r.squaredGLMM(l.tri)
+
+# Pairwise comparisons
+emmeans(l.tri, pairwise~canopy)
+
+# % change canopy
+(0.239 - 0.531) / 0.531 * 100
+
+##############################################################################
+## Vcmax25 - Tri
+##############################################################################
+df2$vcmax25[c(67, 96)] <- NA
+
+vcmax25.tri <- lmer(log(vcmax25) ~ gm.trt * canopy + (1 | plot) + (1 | id), 
+                    data = subset(df2, spp == "Tri"))
+
+# Check model assumptions
+plot(vcmax25.tri)
+qqnorm(residuals(vcmax25.tri))
+qqline(residuals(vcmax25.tri))
+densityPlot(residuals(vcmax25.tri))
+shapiro.test(residuals(vcmax25.tri))
+outlierTest(vcmax25.tri)
+
+# Model output
+summary(vcmax25.tri)
+Anova(vcmax25.tri)
+r.squaredGLMM(vcmax25.tri)
+
+# Pairwise comparisons
+cld(emmeans(vcmax25.tri, pairwise~gm.trt*canopy, type = "response"))
+emmeans(vcmax25.tri, pairwise~gm.trt, type = "response")
+emmeans(vcmax25.tri, pairwise~canopy, type = "response")
+
+##############################################################################
+## Jmax25 - Tri
+##############################################################################
+df2$jmax25[c(67, 96)] <- NA
+
+jmax25.tri <- lmer(log(jmax25) ~ gm.trt * canopy + (1 | plot) + (1 | id), 
+                   data = subset(df2, spp == "Tri"))
+
+# Check model assumptions
+plot(jmax25.tri)
+qqnorm(residuals(jmax25.tri))
+qqline(residuals(jmax25.tri))
+densityPlot(residuals(jmax25.tri))
+shapiro.test(residuals(jmax25.tri))
+outlierTest(jmax25.tri)
+
+# Model output
+summary(jmax25.tri)
+Anova(jmax25.tri)
+r.squaredGLMM(jmax25.tri)
+
+# Pairwise comparisons
+cld(emmeans(jmax25.tri, pairwise~gm.trt*canopy, type = "response"))
+emmeans(jmax25.tri, pairwise~gm.trt, type = "response")
+emmeans(jmax25.tri, pairwise~canopy, type = "response")
+
+##############################################################################
+## Jmax25:Vcmax25 - Tri
+##############################################################################
+df2$jmax.vcmax[c(97)] <- NA
+
+jmax25_vcmax25.tri <- lmer(jmax.vcmax ~ gm.trt * canopy + (1 | plot) + (1 | id), 
+                           data = subset(df2, spp == "Tri"))
+
+# Check model assumptions
+plot(jmax25_vcmax25.tri)
+qqnorm(residuals(jmax25_vcmax25.tri))
+qqline(residuals(jmax25_vcmax25.tri))
+densityPlot(residuals(jmax25_vcmax25.tri))
+shapiro.test(residuals(jmax25_vcmax25.tri))
+outlierTest(jmax25_vcmax25.tri)
+
+# Model output
+summary(jmax25_vcmax25.tri)
+Anova(jmax25_vcmax25.tri)
+r.squaredGLMM(jmax25_vcmax25.tri)
+
+# Pairwise comparisons
+emmeans(jmax25_vcmax25.tri, pairwise~gm.trt, type = "response")
+emmeans(jmax25_vcmax25.tri, pairwise~canopy, type = "response")
+
+##############################################################################
+## SPAD - Tri
+##############################################################################
+spad.tri <- lmer(SPAD ~ gm.trt * canopy + (1 | plot) + (1 | id), 
+                 data = subset(df2, spp == "Tri"))
+
+# Check model assumptions
+plot(spad.tri)
+qqnorm(residuals(spad.tri))
+qqline(residuals(spad.tri))
+densityPlot(residuals(spad.tri))
+shapiro.test(residuals(spad.tri))
+outlierTest(spad.tri)
+
+# Model output
+summary(spad.tri)
+Anova(spad.tri)
+r.squaredGLMM(spad.tri)
+
+# Pairwise comparisons
+cld(emmeans(spad.tri, pairwise~gm.trt*canopy, type = "response"))
+emmeans(spad.tri, pairwise~gm.trt, type = "response")
+emmeans(spad.tri, pairwise~canopy, type = "response")
 
 ##############################################################################
 ## Anet - Mai
 ##############################################################################
-df$anet[c(91)] <- NA
+df2$anet[43] <- NA
 
-anet.mai <- lmer(
-  anet ~ gm.trt * canopy  + (1 | plot), data = subset(df, spp == "Mai"))
+anet.mai <- lmer(anet ~ gm.trt * canopy + (1 | plot) + (1 | id), 
+                 data = subset(df2, spp == "Mai"))
 
 # Check model assumptions
 plot(anet.mai)
@@ -246,52 +408,13 @@ r.squaredGLMM(anet.mai)
 emmeans(anet.mai, pairwise~canopy)
 emmeans(anet.mai, pairwise~gm.trt)
 
-emmeans(anet.mai, pairwise~canopy * gm.trt)
-
-# % change canopy
-(4.02 - 9.85) / 9.85 * 100
-
-# % change gm.trt
-(6.25 - 7.62) / 7.62 * 100
-
-# % change gm.trt between open canopy and closed canopy
-(9.182 - 10.519) / 10.519 * 100 # open canopy
-(3.317 - 4.725) / 4.725 * 100 # closed canopy
-
 ##############################################################################
-## gs - Tri
+## gsw - Mai
 ##############################################################################
-df$gsw[53] <- NA
+df2$gsw[43] <- NA
 
-gsw.tri <- lmer(
-  log(gsw) ~ gm.trt * canopy + (1 | plot), data = subset(df, spp == "Tri"))
-
-# Check model assumptions
-plot(gsw.tri)
-qqnorm(residuals(gsw.tri))
-qqline(residuals(gsw.tri))
-densityPlot(residuals(gsw.tri))
-shapiro.test(residuals(gsw.tri))
-outlierTest(gsw.tri)
-
-# Model output
-summary(gsw.tri)
-Anova(gsw.tri)
-r.squaredGLMM(gsw.tri)
-
-# Pairwise comparisons
-emmeans(gsw.tri, pairwise~canopy, type = "response")
-
-# Canopy % change
-(0.106 - 0.136) / 0.136 * 100
-
-##############################################################################
-## gs - Mai
-##############################################################################
-df$gsw[91] <- NA
-
-gsw.mai <- lmer(
-  gsw ~ gm.trt * canopy + (1 | plot), data = subset(df, spp == "Mai"))
+gsw.mai <- lmer(gsw ~ gm.trt * canopy + (1 | plot) + (1 | id), 
+                data = subset(df2, spp == "Mai"))
 
 # Check model assumptions
 plot(gsw.mai)
@@ -307,45 +430,16 @@ Anova(gsw.mai)
 r.squaredGLMM(gsw.mai)
 
 # Pairwise comparisons
-emmeans(gsw.mai, pairwise~canopy)
 emmeans(gsw.mai, pairwise~gm.trt)
-
-# Canopy % change
-(0.0581 - 0.1536) / 0.1536 * 100
-
-# % change gm.trt
-(0.0889 - 0.1227) / 0.1227 * 100
-
-##############################################################################
-## stomatal limitation - Tri
-##############################################################################
-l.tri <- lmer(
-  l ~ gm.trt * canopy  + (1 | plot), data = subset(df, spp == "Tri" & l > 0))
-
-# Check model assumptions
-plot(l.tri)
-qqnorm(residuals(l.tri))
-qqline(residuals(l.tri))
-densityPlot(residuals(l.tri))
-shapiro.test(residuals(l.tri))
-outlierTest(l.tri)
-
-# Model output
-summary(l.tri)
-Anova(l.tri)
-r.squaredGLMM(l.tri)
-
-# Pairwise comparisons
-emmeans(l.tri, pairwise~canopy, type = "response")
-
-# % change canopy
-(0.228 - 0.510) / 0.510 * 100
+emmeans(gsw.mai, pairwise~canopy)
 
 ##############################################################################
 ## stomatal limitation - Mai
 ##############################################################################
-l.mai <- lmer(
-  log(l) ~ gm.trt * canopy + (1 | plot), data = subset(df, spp == "Mai" & l > 0))
+df2$l[68] <- NA
+
+l.mai <- lmer(l ~ gm.trt * canopy + (1 | plot) + (1 | id), 
+              data = subset(df2, spp == "Mai"))
 
 # Check model assumptions
 plot(l.mai)
@@ -361,48 +455,78 @@ Anova(l.mai)
 r.squaredGLMM(l.mai)
 
 # Pairwise comparisons
-cld(emmeans(l.mai, pairwise~gm.trt*canopy, type = "response"))
-emmeans(l.mai, pairwise~canopy, type = "response")
-emmeans(l.mai, pairwise~gm.trt, type = "response")
-
-# % change canopy
-(0.328 - 0.376) / 0.376 * 100
-
-# % change gm.trt
-(0.398 - 0.310) / 0.310 * 100
+cld(emmeans(l.mai, pairwise~gm.trt*canopy))
+emmeans(l.mai, pairwise~gm.trt)
+emmeans(l.mai, pairwise~canopy)
 
 ##############################################################################
-## SPAD - Tri
+## Vcmax25 - Mai
 ##############################################################################
-spad.tri <- lmer(
-  SPAD ~ gm.trt * canopy + (1 | plot), data = subset(df, spp == "Tri"))
+vcmax25.mai <- lmer(log(vcmax25) ~ gm.trt * canopy + (1 | plot) + (1 | id), 
+                    data = subset(df2, spp == "Mai"))
 
 # Check model assumptions
-plot(spad.tri)
-qqnorm(residuals(spad.tri))
-qqline(residuals(spad.tri))
-densityPlot(residuals(spad.tri))
-shapiro.test(residuals(spad.tri))
-outlierTest(spad.tri)
+plot(vcmax25.mai)
+qqnorm(residuals(vcmax25.mai))
+qqline(residuals(vcmax25.mai))
+densityPlot(residuals(vcmax25.mai))
+shapiro.test(residuals(vcmax25.mai))
+outlierTest(vcmax25.mai)
 
 # Model output
-summary(spad.tri)
-Anova(spad.tri)
-r.squaredGLMM(spad.tri)
+summary(vcmax25.mai)
+Anova(vcmax25.mai)
+r.squaredGLMM(vcmax25.mai)
 
 # Pairwise comparisons
-emmeans(spad.tri, pairwise~canopy)
+emmeans(vcmax25.mai, pairwise~canopy, type = "response")
 
-# % change canopy
-(44.587 - 35.52) / 35.52 * 100
+##############################################################################
+## Jmax25 - Tri
+##############################################################################
+jmax25.mai <- lmer(log(jmax25) ~ gm.trt * canopy + (1 | plot) + (1 | id), 
+                   data = subset(df2, spp == "Mai"))
+
+# Check model assumptions
+plot(jmax25.mai)
+qqnorm(residuals(jmax25.mai))
+qqline(residuals(jmax25.mai))
+densityPlot(residuals(jmax25.mai))
+shapiro.test(residuals(jmax25.mai))
+outlierTest(jmax25.mai)
+
+# Model output
+summary(jmax25.mai)
+Anova(jmax25.mai)
+r.squaredGLMM(jmax25.mai)
+
+# Pairwise comparisons
+emmeans(jmax25.mai, pairwise~canopy, type = "response")
+
+##############################################################################
+## Jmax25:Vcmax25 - Tri
+##############################################################################
+jmax25_vcmax25.mai <- lmer(jmax.vcmax ~ gm.trt * canopy + (1 | plot) + (1 | id), 
+                           data = subset(df2, spp == "Mai"))
+
+# Check model assumptions
+plot(jmax25_vcmax25.mai)
+qqnorm(residuals(jmax25_vcmax25.mai))
+qqline(residuals(jmax25_vcmax25.mai))
+densityPlot(residuals(jmax25_vcmax25.mai))
+shapiro.test(residuals(jmax25_vcmax25.mai))
+outlierTest(jmax25_vcmax25.mai)
+
+# Model output
+summary(jmax25_vcmax25.mai)
+Anova(jmax25_vcmax25.mai)
+r.squaredGLMM(jmax25_vcmax25.mai)
 
 ##############################################################################
 ## SPAD - Mai
 ##############################################################################
-df$SPAD[111] <- NA
-
-spad.mai <- lmer(
-  log(SPAD) ~ gm.trt * canopy + (1 | plot), data = subset(df, spp == "Mai"))
+spad.mai <- lmer(SPAD ~ gm.trt * canopy + (1 | plot) + (1 | id), 
+                 data = subset(df2, spp == "Mai"))
 
 # Check model assumptions
 plot(spad.mai)
@@ -420,465 +544,302 @@ r.squaredGLMM(spad.mai)
 # Pairwise comparisons
 emmeans(spad.mai, pairwise~canopy, type = "response")
 
-# % change canopy
-(39.68 - 26.28) / 26.28 * 100
+##############################################################################
+## Write Table 3: Soil nutrients
+##############################################################################
+# Soil inorganic nitrogen
+soil.nitrogen.table <- data.frame(Anova(plant_availableN)) %>%
+  dplyr::select(chisq = Chisq, df = Df, p_val = Pr..Chisq.) %>%
+  mutate(trait = "soil_inorg_N",
+         treatment = row.names(.),
+         across(chisq:p_val, \(x) round(x, digits = 3)),
+         chisq = ifelse(chisq < 0.001 & chisq >= 0, "<0.001", chisq),
+         p_val = ifelse(p_val < 0.001 & p_val >= 0, "<0.001", p_val)) %>%
+  pivot_wider(names_from = treatment, values_from = chisq:p_val) %>%
+  dplyr::select(trait, df = df_gm.trt, chisq_gm.trt, p_val_gm.trt,
+                chisq_canopy, p_val_canopy, chisq_int = `chisq_gm.trt:canopy`, 
+                p_val_int = `p_val_gm.trt:canopy`)
+
+# Soil nitrate availability
+soil.nitrate.table <- data.frame(Anova(nitrate)) %>%
+  dplyr::select(chisq = Chisq, df = Df, p_val = Pr..Chisq.) %>%
+  mutate(trait = "soil_nitrate",
+         treatment = row.names(.),
+         across(chisq:p_val, \(x) round(x, digits = 3)),
+         chisq = ifelse(chisq < 0.001 & chisq >= 0, "<0.001", chisq),
+         p_val = ifelse(p_val < 0.001 & p_val >= 0, "<0.001", p_val)) %>%
+  pivot_wider(names_from = treatment, values_from = chisq:p_val) %>%
+  dplyr::select(trait, df = df_gm.trt, chisq_gm.trt, p_val_gm.trt,
+                chisq_canopy, p_val_canopy, chisq_int = `chisq_gm.trt:canopy`, 
+                p_val_int = `p_val_gm.trt:canopy`)
+
+# Soil ammonium availability
+soil.ammonium.table <- data.frame(Anova(ammonium)) %>%
+  dplyr::select(chisq = Chisq, df = Df, p_val = Pr..Chisq.) %>%
+  mutate(trait = "soil_ammonium",
+         treatment = row.names(.),
+         across(chisq:p_val, \(x) round(x, digits = 3)),
+         chisq = ifelse(chisq < 0.001 & chisq >= 0, "<0.001", chisq),
+         p_val = ifelse(p_val < 0.001 & p_val >= 0, "<0.001", p_val)) %>%
+  pivot_wider(names_from = treatment, values_from = chisq:p_val) %>%
+  dplyr::select(trait, df = df_gm.trt, chisq_gm.trt, p_val_gm.trt,
+                chisq_canopy, p_val_canopy, chisq_int = `chisq_gm.trt:canopy`, 
+                p_val_int = `p_val_gm.trt:canopy`)
+
+# Soil phosphate availability
+soil.phosphate.table <- data.frame(Anova(phosphate)) %>%
+  dplyr::select(chisq = Chisq, df = Df, p_val = Pr..Chisq.) %>%
+  mutate(trait = "soil_phosphate",
+         treatment = row.names(.),
+         across(chisq:p_val, \(x) round(x, digits = 3)),
+         chisq = ifelse(chisq < 0.001 & chisq >= 0, "<0.001", chisq),
+         p_val = ifelse(p_val < 0.001 & p_val >= 0, "<0.001", p_val)) %>%
+  pivot_wider(names_from = treatment, values_from = chisq:p_val) %>%
+  dplyr::select(trait, df = df_gm.trt, chisq_gm.trt, p_val_gm.trt,
+                chisq_canopy, p_val_canopy, chisq_int = `chisq_gm.trt:canopy`, 
+                p_val_int = `p_val_gm.trt:canopy`)
+
+# Soil N:P
+soil.np.table <- data.frame(Anova(n_to_p_ratio)) %>%
+  dplyr::select(chisq = Chisq, df = Df, p_val = Pr..Chisq.) %>%
+  mutate(trait = "soil_np",
+         treatment = row.names(.),
+         across(chisq:p_val, \(x) round(x, digits = 3)),
+         chisq = ifelse(chisq < 0.001 & chisq >= 0, "<0.001", chisq),
+         p_val = ifelse(p_val < 0.001 & p_val >= 0, "<0.001", p_val)) %>%
+  pivot_wider(names_from = treatment, values_from = chisq:p_val) %>%
+  dplyr::select(trait, df = df_gm.trt, chisq_gm.trt, p_val_gm.trt,
+                chisq_canopy, p_val_canopy, chisq_int = `chisq_gm.trt:canopy`, 
+                p_val_int = `p_val_gm.trt:canopy`)
+
+# Soil moisture
+soil.moisture.table <- data.frame(Anova(sm_model)) %>%
+  dplyr::select(chisq = Chisq, df = Df, p_val = Pr..Chisq.) %>%
+  mutate(trait = "soil_moisture",
+         treatment = row.names(.),
+         across(chisq:p_val, \(x) round(x, digits = 3)),
+         chisq = ifelse(chisq < 0.001 & chisq >= 0, "<0.001", chisq),
+         p_val = ifelse(p_val < 0.001 & p_val >= 0, "<0.001", p_val)) %>%
+  pivot_wider(names_from = treatment, values_from = chisq:p_val) %>%
+  dplyr::select(trait, df = df_gm.trt, chisq_gm.trt, p_val_gm.trt,
+                chisq_canopy = chisq_doy, p_val_canopy = p_val_doy, chisq_int = `chisq_gm.trt:doy`, 
+                p_val_int = `p_val_gm.trt:doy`)
+
+# Write Table 3
+table3 <- rbind(soil.nitrogen.table, soil.nitrate.table,
+                soil.ammonium.table, soil.phosphate.table,
+                soil.np.table, soil.moisture.table)
+write.csv(table3, "../tables/TT23_table3.csv", row.names = FALSE)
 
 ##############################################################################
-## Vcmax - Tri
-##############################################################################
-df$vcmax25[180] <- NA
-
-vcmax.tri <- lmer(
-  log(vcmax25) ~ gm.trt * canopy + (1 | plot), data = subset(df, spp == "Tri"))
-
-# Check model assumptions
-plot(vcmax.tri)
-qqnorm(residuals(vcmax.tri))
-qqline(residuals(vcmax.tri))
-densityPlot(residuals(vcmax.tri))
-shapiro.test(residuals(vcmax.tri))
-outlierTest(vcmax.tri)
-
-# Model output
-summary(vcmax.tri)
-Anova(vcmax.tri)
-r.squaredGLMM(vcmax.tri)
-
-# Pairwise comparisons
-emmeans(vcmax.tri, pairwise~canopy, type = "response")
-
-# % change canopy
-(23.690 - 99.356) / 99.356 * 100
-
-# What is the mean +/- SD of Tri Vcmax25?
-df %>%
-  filter(spp == "Tri") %>%
-  summarize(vcmax.mean = mean(vcmax25, na.rm = TRUE),
-            vcmax.stdev = sd(vcmax25, na.rm = TRUE))
-
-##############################################################################
-## Vcmax - Mai
-##############################################################################
-vcmax.mai <- lmer(
-  vcmax25 ~ gm.trt * canopy  + (1 | plot), data = subset(df, spp == "Mai"))
-
-# Check model assumptions
-plot(vcmax.mai)
-qqnorm(residuals(vcmax.mai))
-qqline(residuals(vcmax.mai))
-densityPlot(residuals(vcmax.mai))
-shapiro.test(residuals(vcmax.mai))
-outlierTest(vcmax.mai)
-
-# Model output
-summary(vcmax.mai)
-Anova(vcmax.mai)
-r.squaredGLMM(vcmax.mai)
-
-# Pairwise comparisons
-emmeans(vcmax.mai, pairwise~canopy, type = "response")
-emmeans(vcmax.mai, pairwise~gm.trt, type = "response")
-
-# % change canopy
-(25.082 - 58.061) / 58.061 * 100
-
-# What is the mean +/- SD of Tri Vcmax25?
-df %>%
-  filter(spp == "Mai") %>%
-  summarize(vcmax.mean = mean(vcmax25, na.rm = TRUE),
-            vcmax.stdev = sd(vcmax25, na.rm = TRUE))
-
-##############################################################################
-## Jmax - Tri
-##############################################################################
-df$jmax25[c(142, 180)] <- NA
-
-jmax.tri <- lmer(
-  log(jmax25) ~ gm.trt * canopy + (1 | plot), data = subset(df, spp == "Tri"))
-
-# Check model assumptions
-plot(jmax.tri)
-qqnorm(residuals(jmax.tri))
-qqline(residuals(jmax.tri))
-densityPlot(residuals(jmax.tri))
-shapiro.test(residuals(jmax.tri))
-outlierTest(jmax.tri)
-
-# Model output
-summary(jmax.tri)
-Anova(jmax.tri)
-r.squaredGLMM(jmax.tri)
-
-# Pairwise comparisons
-emmeans(jmax.tri, pairwise~canopy, type = "response")
-emmeans(jmax.tri, pairwise~gm.trt, type = "response")
-cld(emmeans(jmax.tri, pairwise~gm.trt*canopy, type = "response"))
-
-# % change canopy
-(44.570 - 176.151) / 176.151 * 100
-
-# % change GM trt
-(85.055 - 92.306) / 92.306 * 100
-
-##############################################################################
-## Jmax - Mai
-##############################################################################
-jmax.mai <- lmer(
-  log(jmax25) ~ gm.trt * canopy + (1 | plot), data = subset(df, spp == "Mai"))
-
-# Check model assumptions
-plot(jmax.mai)
-qqnorm(residuals(jmax.mai))
-qqline(residuals(jmax.mai))
-densityPlot(residuals(jmax.mai))
-shapiro.test(residuals(jmax.mai))
-outlierTest(jmax.mai)
-
-# Model output
-summary(jmax.mai)
-Anova(jmax.mai)
-r.squaredGLMM(jmax.mai)
-
-# Pairwise comparisons
-emmeans(jmax.mai, pairwise~canopy, type = "response")
-emmeans(jmax.mai, pairwise~gm.trt, type = "response")
-cld(emmeans(jmax.mai, pairwise~canopy*gm.trt))
-
-# % change canopy
-(43.887 - 102.424) / 102.424 * 100
-
-# % change gm.trt
-(66.3 - 67.8) / 67.8 * 100
-
-##############################################################################
-## Jmax : Vcmax - Tri
-##############################################################################
-df$jmax25.vcmax25[181] <- NA
-
-jmax.vcmax.tri <- lmer(
-  jmax25.vcmax25 ~ gm.trt * canopy + (1 | plot), data = subset(df, spp == "Tri"))
-
-# Check model assumptions
-plot(jmax.vcmax.tri)
-qqnorm(residuals(jmax.vcmax.tri))
-qqline(residuals(jmax.vcmax.tri))
-densityPlot(residuals(jmax.vcmax.tri))
-shapiro.test(residuals(jmax.vcmax.tri))
-outlierTest(jmax.vcmax.tri)
-
-# Model output
-summary(jmax.vcmax.tri)
-Anova(jmax.vcmax.tri)
-r.squaredGLMM(jmax.vcmax.tri)
-
-# Pairwise comparisons
-emmeans(jmax.vcmax.tri, pairwise~canopy)
-
-# % change canopy
-(1.85 - 1.78) / 1.78 * 100
-
-##############################################################################
-## Jmax : Vcmax - Mai
-##############################################################################
-df$jmax25.vcmax25[c(219)] <- NA
-
-jmax.vcmax.mai <- lmer(
-  jmax25.vcmax25 ~ gm.trt * canopy + (1 | plot), data = subset(df, spp == "Mai"))
-
-# Check model assumptions
-plot(jmax.vcmax.mai)
-qqnorm(residuals(jmax.vcmax.mai))
-qqline(residuals(jmax.vcmax.mai))
-densityPlot(residuals(jmax.vcmax.mai))
-shapiro.test(residuals(jmax.vcmax.mai))
-outlierTest(jmax.vcmax.mai)
-
-
-# Model output
-summary(jmax.vcmax.mai)
-Anova(jmax.vcmax.mai)
-r.squaredGLMM(jmax.vcmax.mai)
-
-# Pairwise comparisons
-emmeans(jmax.vcmax.mai, pairwise~canopy)
-emmeans(jmax.vcmax.mai, pairwise~gm.trt)
-cld(emmeans(jmax.vcmax.mai, pairwise~canopy*gm.trt))
-
-# % change canopy
-(1.713 - 1.797) / 1.797 * 100 
-
-# % change gm.trt
-(1.73 - 1.78) / 1.78 * 100
-
-##############################################################################
-## Write Table 2: Gas exchange
+## Write Table 4: Gas exchange
 ##############################################################################
 
 # Net photosynthesis (Trillium)
 anet.tri.table <- data.frame(Anova(anet.tri)) %>%
-  mutate(treatment = row.names(.),
-         chisq_anet.tri = Chisq,
-         p_anet.tri = Pr..Chisq.,
-         across(chisq_anet.tri:p_anet.tri, \(x) round(x, digits = 3)),
-         chisq_anet.tri = ifelse(chisq_anet.tri < 0.001 & chisq_anet.tri >= 0, 
-                              "<0.001", chisq_anet.tri),
-         p_anet.tri = ifelse(p_anet.tri <0.001 & p_anet.tri >= 0, 
-                          "<0.001", p_anet.tri)) %>%
-  dplyr::select(treatment, Df, chisq_anet.tri, p_anet.tri)
+  mutate(spp = "Tri",
+         treatment = row.names(.),
+         chisq_anet = Chisq,
+         p_anet = Pr..Chisq.,
+         across(chisq_anet:p_anet, \(x) round(x, digits = 3)),
+         chisq_anet = ifelse(chisq_anet < 0.001 & chisq_anet >= 0, 
+                              "<0.001", chisq_anet),
+         p_anet = ifelse(p_anet < 0.001 & p_anet >= 0, 
+                          "<0.001", p_anet)) %>%
+  dplyr::select(treatment, spp, Df, chisq_anet, p_anet)
 
 # Net photosynthesis (Maianthemum)
 anet.mai.table <- data.frame(Anova(anet.mai)) %>%
-  mutate(treatment = row.names(.),
-         chisq_anet.mai = Chisq,
-         p_anet.mai = Pr..Chisq.,
-         across(chisq_anet.mai:p_anet.mai, \(x) round(x, digits = 3)),
-         chisq_anet.mai = ifelse(chisq_anet.mai < 0.001 & chisq_anet.mai >= 0, 
-                                 "<0.001", chisq_anet.mai),
-         p_anet.mai = ifelse(p_anet.mai <0.001 & p_anet.mai >= 0, 
-                             "<0.001", p_anet.mai)) %>%
-  dplyr::select(treatment, chisq_anet.mai, p_anet.mai)
+  mutate(spp = "Mai",
+         treatment = row.names(.),
+         chisq_anet = Chisq,
+         p_anet = Pr..Chisq.,
+         across(chisq_anet:p_anet, \(x) round(x, digits = 3)),
+         chisq_anet = ifelse(chisq_anet < 0.001 & chisq_anet >= 0, 
+                                 "<0.001", chisq_anet),
+         p_anet = ifelse(p_anet < 0.001 & p_anet >= 0, 
+                             "<0.001", p_anet)) %>%
+  dplyr::select(treatment, spp, Df, chisq_anet, p_anet)
 
 # Stomatal conductance (Trillium)
 gsw.tri.table <- data.frame(Anova(gsw.tri)) %>%
-  mutate(treatment = row.names(.),
-         chisq_gsw.tri = Chisq,
-         p_gsw.tri = Pr..Chisq.,
-         across(chisq_gsw.tri:p_gsw.tri, \(x) round(x, digits = 3)),
-         chisq_gsw.tri = ifelse(chisq_gsw.tri < 0.001 & chisq_gsw.tri >= 0, 
-                                 "<0.001", chisq_gsw.tri),
-         p_gsw.tri = ifelse(p_gsw.tri <0.001 & p_gsw.tri >= 0, 
-                            "<0.001", p_gsw.tri)) %>%
-  dplyr::select(treatment, chisq_gsw.tri, p_gsw.tri)
+  mutate(spp = "Tri",
+         treatment = row.names(.),
+         chisq_gsw = Chisq,
+         p_gsw = Pr..Chisq.,
+         across(chisq_gsw:p_gsw, \(x) round(x, digits = 3)),
+         chisq_gsw = ifelse(chisq_gsw < 0.001 & chisq_gsw >= 0, 
+                             "<0.001", chisq_gsw),
+         p_gsw = ifelse(p_gsw < 0.001 & p_gsw >= 0, 
+                         "<0.001", p_gsw)) %>%
+  dplyr::select(treatment, spp, chisq_gsw, p_gsw)
 
 # Stomatal conductance (Maianthemum)
 gsw.mai.table <- data.frame(Anova(gsw.mai)) %>%
-  mutate(treatment = row.names(.),
-         chisq_gsw.mai = Chisq,
-         p_gsw.mai = Pr..Chisq.,
-         across(chisq_gsw.mai:p_gsw.mai, \(x) round(x, digits = 3)),
-         chisq_gsw.mai = ifelse(chisq_gsw.mai < 0.001 & chisq_gsw.mai >= 0, 
-                                "<0.001", chisq_gsw.mai),
-         p_gsw.mai = ifelse(p_gsw.mai <0.001 & p_gsw.mai >= 0, 
-                            "<0.001", p_gsw.mai)) %>%
-  dplyr::select(treatment, chisq_gsw.mai, p_gsw.mai)
+  mutate(spp = "Mai",
+         treatment = row.names(.),
+         chisq_gsw = Chisq,
+         p_gsw = Pr..Chisq.,
+         across(chisq_gsw:p_gsw, \(x) round(x, digits = 3)),
+         chisq_gsw = ifelse(chisq_gsw < 0.001 & chisq_gsw >= 0, 
+                            "<0.001", chisq_gsw),
+         p_gsw = ifelse(p_gsw < 0.001 & p_gsw >= 0, 
+                        "<0.001", p_gsw)) %>%
+  dplyr::select(treatment, spp, chisq_gsw, p_gsw)
 
 # Stomatal limitation (Trillium)
 l.tri.table <- data.frame(Anova(l.tri)) %>%
-  mutate(treatment = row.names(.),
-         chisq_l.tri = Chisq,
-         p_l.tri = Pr..Chisq.,
-         across(chisq_l.tri:p_l.tri, \(x) round(x, digits = 3)),
-         chisq_l.tri = ifelse(chisq_l.tri < 0.001 & 
-                                chisq_l.tri >= 0, 
-                              "<0.001", chisq_l.tri),
-         p_l.tri = ifelse(p_l.tri <0.001 & p_l.tri >= 0, 
-                          "<0.001", p_l.tri)) %>%
-  dplyr::select(treatment, chisq_l.tri, p_l.tri)
+  mutate(spp = "Tri",
+         treatment = row.names(.),
+         chisq_l = Chisq,
+         p_l = Pr..Chisq.,
+         across(chisq_l:p_l, \(x) round(x, digits = 3)),
+         chisq_l = ifelse(chisq_l < 0.001 & 
+                                chisq_l >= 0, 
+                              "<0.001", chisq_l),
+         p_l = ifelse(p_l <0.001 & p_l >= 0, 
+                          "<0.001", p_l)) %>%
+  dplyr::select(treatment, spp, chisq_l, p_l)
 
 # Stomatal limitation (Maianthemum)
 l.mai.table <- data.frame(Anova(l.mai)) %>%
-  mutate(treatment = row.names(.),
-         chisq_l.mai = Chisq,
-         p_l.mai = Pr..Chisq.,
-         across(chisq_l.mai:p_l.mai, \(x) round(x, digits = 3)),
-         chisq_l.mai = ifelse(chisq_l.mai < 0.001 & 
-                                chisq_l.mai >= 0, 
-                              "<0.001", chisq_l.mai),
-         p_l.mai = ifelse(p_l.mai <0.001 & p_l.mai >= 0, 
-                          "<0.001", p_l.mai)) %>%
-  dplyr::select(treatment, chisq_l.mai, p_l.mai)
+  mutate(spp = "Mai",
+         treatment = row.names(.),
+         chisq_l = Chisq,
+         p_l = Pr..Chisq.,
+         across(chisq_l:p_l, \(x) round(x, digits = 3)),
+         chisq_l = ifelse(chisq_l < 0.001 & 
+                            chisq_l >= 0, 
+                          "<0.001", chisq_l),
+         p_l = ifelse(p_l <0.001 & p_l >= 0, 
+                      "<0.001", p_l)) %>%
+  dplyr::select(treatment, spp, chisq_l, p_l)
 
 # SPAD (Trillium)
 spad.tri.table <- data.frame(Anova(spad.tri)) %>%
-  mutate(treatment = row.names(.),
-         chisq_spad.tri = Chisq,
-         p_spad.tri = Pr..Chisq.,
-         across(chisq_spad.tri:p_spad.tri, \(x) round(x, digits = 3)),
-         chisq_spad.tri = ifelse(chisq_spad.tri < 0.001 & chisq_spad.tri >= 0, 
-                                 "<0.001", chisq_spad.tri),
-         p_spad.tri = ifelse(p_spad.tri <0.001 & p_spad.tri >= 0, 
-                             "<0.001", p_spad.tri)) %>%
-  dplyr::select(treatment, Df, chisq_spad.tri, p_spad.tri)
+  mutate(spp = "Tri",
+         treatment = row.names(.),
+         chisq_spad = Chisq,
+         p_spad = Pr..Chisq.,
+         across(chisq_spad:p_spad, \(x) round(x, digits = 3)),
+         chisq_spad = ifelse(chisq_spad < 0.001 & chisq_spad >= 0, 
+                                 "<0.001", chisq_spad),
+         p_spad = ifelse(p_spad <0.001 & p_spad >= 0, 
+                             "<0.001", p_spad)) %>%
+  dplyr::select(treatment, spp, chisq_spad, p_spad)
 
 # SPAD (Maianthemum)
 spad.mai.table <- data.frame(Anova(spad.mai)) %>%
-  mutate(treatment = row.names(.),
-         chisq_spad.mai = Chisq,
-         p_spad.mai = Pr..Chisq.,
-         across(chisq_spad.mai:p_spad.mai, \(x) round(x, digits = 3)),
-         chisq_spad.mai = ifelse(chisq_spad.mai < 0.001 & chisq_spad.mai >= 0, 
-                                 "<0.001", chisq_spad.mai),
-         p_spad.mai = ifelse(p_spad.mai <0.001 & p_spad.mai >= 0, 
-                             "<0.001", p_spad.mai)) %>%
-  dplyr::select(treatment, chisq_spad.mai, p_spad.mai)
+  mutate(spp = "Mai",
+         treatment = row.names(.),
+         chisq_spad = Chisq,
+         p_spad = Pr..Chisq.,
+         across(chisq_spad:p_spad, \(x) round(x, digits = 3)),
+         chisq_spad = ifelse(chisq_spad < 0.001 & chisq_spad >= 0, 
+                             "<0.001", chisq_spad),
+         p_spad = ifelse(p_spad <0.001 & p_spad >= 0, 
+                         "<0.001", p_spad)) %>%
+  dplyr::select(treatment, spp, chisq_spad, p_spad)
 
-# Concatenate Table 2
-table2 <- anet.tri.table %>% full_join(gsw.tri.table) %>% 
-  full_join(l.tri.table) %>% full_join(spad.tri.table) %>% 
-  full_join(anet.mai.table) %>% full_join(gsw.mai.table) %>% 
-  full_join(l.mai.table) %>% full_join(spad.mai.table)
-# write.csv(table2, "../tables/TT23_table2.csv", row.names = FALSE)
+# Create Table 3
+anet_rbind <- rbind(anet.tri.table, anet.mai.table)
+gsw_rbind <- rbind(gsw.tri.table, gsw.mai.table)
+l_rbind <- rbind(l.tri.table, l.mai.table)
+spad_rbind <- rbind(spad.tri.table, spad.mai.table)
+
+table4 <- anet_rbind %>% full_join(gsw_rbind) %>%
+  full_join(l_rbind) %>% full_join(spad_rbind)
+# write.csv(table4, "../tables/TT23_table4.csv", row.names = FALSE)
 
 ##############################################################################
-## Write Table 3: Indices of photosynthetic capacity
+## Write Table 45: Indices of photosynthetic capacity
 ##############################################################################
 
 # Temp. standardized maximum rate of Rubisco carboyxlation (Trillium)
-vcmax.tri <- data.frame(Anova(vcmax.tri)) %>%
-  mutate(treatment = row.names(.),
-         chisq_vcmax.tri = Chisq,
-         p_vcmax.tri = Pr..Chisq.,
-         across(chisq_vcmax.tri:p_vcmax.tri, \(x) round(x, digits = 3)),
-         chisq_vcmax.tri = ifelse(chisq_vcmax.tri < 0.001 & chisq_vcmax.tri >= 0, 
-                                 "<0.001", chisq_vcmax.tri),
-         p_vcmax.tri = ifelse(p_vcmax.tri <0.001 & p_vcmax.tri >= 0, 
-                             "<0.001", p_vcmax.tri)) %>%
-  dplyr::select(treatment, Df, chisq_vcmax.tri, p_vcmax.tri)
+vcmax.tri <- data.frame(Anova(vcmax25.tri)) %>%
+  mutate(spp = "Tri",
+         treatment = row.names(.),
+         chisq_vcmax = Chisq,
+         p_vcmax = Pr..Chisq.,
+         across(chisq_vcmax:p_vcmax, \(x) round(x, digits = 3)),
+         chisq_vcmax = ifelse(chisq_vcmax < 0.001 & chisq_vcmax >= 0, 
+                                 "<0.001", chisq_vcmax),
+         p_vcmax = ifelse(p_vcmax < 0.001 & p_vcmax >= 0, 
+                             "<0.001", p_vcmax)) %>%
+  dplyr::select(treatment, spp, Df, chisq_vcmax, p_vcmax)
 
 # Temp. standardized maximum rate of Rubisco carboxylation (Maianthemum)
-vcmax.mai <- data.frame(Anova(vcmax.mai)) %>%
-  mutate(treatment = row.names(.),
-         chisq_vcmax.mai = Chisq,
-         p_vcmax.mai = Pr..Chisq.,
-         across(chisq_vcmax.mai:p_vcmax.mai, \(x) round(x, digits = 3)),
-         chisq_vcmax.mai = ifelse(chisq_vcmax.mai < 0.001 & chisq_vcmax.mai >= 0, 
-                                 "<0.001", chisq_vcmax.mai),
-         p_vcmax.mai = ifelse(p_vcmax.mai <0.001 & p_vcmax.mai >= 0, 
-                             "<0.001", p_vcmax.mai)) %>%
-  dplyr::select(treatment, chisq_vcmax.mai, p_vcmax.mai)
+vcmax.mai <- data.frame(Anova(vcmax25.mai)) %>%
+  mutate(spp = "Mai",
+         treatment = row.names(.),
+         chisq_vcmax = Chisq,
+         p_vcmax = Pr..Chisq.,
+         across(chisq_vcmax:p_vcmax, \(x) round(x, digits = 3)),
+         chisq_vcmax = ifelse(chisq_vcmax < 0.001 & chisq_vcmax >= 0, 
+                              "<0.001", chisq_vcmax),
+         p_vcmax = ifelse(p_vcmax < 0.001 & p_vcmax >= 0, 
+                          "<0.001", p_vcmax)) %>%
+  dplyr::select(treatment, spp, Df, chisq_vcmax, p_vcmax)
 
 # Temp. standardized maximum rate of electron transport for RuBP 
 # regeneration (Trillium)
-jmax.tri <- data.frame(Anova(jmax.tri)) %>%
-  mutate(treatment = row.names(.),
-         chisq_jmax.tri = Chisq,
-         p_jmax.tri = Pr..Chisq.,
-         across(chisq_jmax.tri:p_jmax.tri, \(x) round(x, digits = 3)),
-         chisq_jmax.tri = ifelse(chisq_jmax.tri < 0.001 & chisq_jmax.tri >= 0, 
-                                  "<0.001", chisq_jmax.tri),
-         p_jmax.tri = ifelse(p_jmax.tri <0.001 & p_jmax.tri >= 0, 
-                              "<0.001", p_jmax.tri)) %>%
-  dplyr::select(treatment, Df, chisq_jmax.tri, p_jmax.tri)
+jmax.tri <- data.frame(Anova(jmax25.tri)) %>%
+  mutate(spp = "Tri",
+         treatment = row.names(.),
+         chisq_jmax = Chisq,
+         p_jmax = Pr..Chisq.,
+         across(chisq_jmax:p_jmax, \(x) round(x, digits = 3)),
+         chisq_jmax = ifelse(chisq_jmax < 0.001 & chisq_jmax >= 0, 
+                              "<0.001", chisq_jmax),
+         p_jmax = ifelse(p_jmax < 0.001 & p_jmax >= 0, 
+                          "<0.001", p_jmax)) %>%
+  dplyr::select(treatment, spp, chisq_jmax, p_jmax)
 
 # Temp. standardized maximum rate of electron transport for RuBP 
 # regeneration (Maianthemum)
-jmax.mai <- data.frame(Anova(jmax.mai)) %>%
-  mutate(treatment = row.names(.),
-         chisq_jmax.mai = Chisq,
-         p_jmax.mai = Pr..Chisq.,
-         across(chisq_jmax.mai:p_jmax.mai, \(x) round(x, digits = 3)),
-         chisq_jmax.mai = ifelse(chisq_jmax.mai < 0.001 & chisq_jmax.mai >= 0, 
-                                  "<0.001", chisq_jmax.mai),
-         p_jmax.mai = ifelse(p_jmax.mai <0.001 & p_jmax.mai >= 0, 
-                              "<0.001", p_jmax.mai)) %>%
-  dplyr::select(treatment, chisq_jmax.mai, p_jmax.mai)
+jmax.mai <- data.frame(Anova(jmax25.mai)) %>%
+  mutate(spp = "Mai",
+         treatment = row.names(.),
+         chisq_jmax = Chisq,
+         p_jmax = Pr..Chisq.,
+         across(chisq_jmax:p_jmax, \(x) round(x, digits = 3)),
+         chisq_jmax = ifelse(chisq_jmax < 0.001 & chisq_jmax >= 0, 
+                             "<0.001", chisq_jmax),
+         p_jmax = ifelse(p_jmax < 0.001 & p_jmax >= 0, 
+                         "<0.001", p_jmax)) %>%
+  dplyr::select(treatment, spp, chisq_jmax, p_jmax)
 
 # The ratio of Jmax25 to Vcmax25 (Trillium) 
-jvmax.tri <- data.frame(Anova(jmax.vcmax.tri)) %>%
-  mutate(treatment = row.names(.),
-         chisq_jvmax.tri = Chisq,
-         p_jvmax.tri = Pr..Chisq.,
-         across(chisq_jvmax.tri:p_jvmax.tri, \(x) round(x, digits = 3)),
-         chisq_jvmax.tri = ifelse(chisq_jvmax.tri < 0.001 & chisq_jvmax.tri >= 0, 
-                                 "<0.001", chisq_jvmax.tri),
-         p_jvmax.tri = ifelse(p_jvmax.tri <0.001 & p_jvmax.tri >= 0, 
-                             "<0.001", p_jvmax.tri)) %>%
-  dplyr::select(treatment, Df, chisq_jvmax.tri, p_jvmax.tri)
+jvmax.tri <- data.frame(Anova(jmax25_vcmax25.tri)) %>%
+  mutate(spp = "Tri",
+         treatment = row.names(.),
+         chisq_jvmax = Chisq,
+         p_jvmax = Pr..Chisq.,
+         across(chisq_jvmax:p_jvmax, \(x) round(x, digits = 3)),
+         chisq_jvmax = ifelse(chisq_jvmax < 0.001 & chisq_jvmax >= 0, 
+                             "<0.001", chisq_jvmax),
+         p_jvmax = ifelse(p_jvmax < 0.001 & p_jvmax >= 0, 
+                         "<0.001", p_jvmax)) %>%
+  dplyr::select(treatment, spp, chisq_jvmax, p_jvmax)
 
 # The ratio of Jmax25 to Vcmax25 (Maianthemum)
-jvmax.mai <- data.frame(Anova(jmax.vcmax.mai)) %>%
-  mutate(treatment = row.names(.),
-         chisq_jvmax.mai = Chisq,
-         p_jvmax.mai = Pr..Chisq.,
-         across(chisq_jvmax.mai:p_jvmax.mai, \(x) round(x, digits = 3)),
-         chisq_jvmax.mai = ifelse(chisq_jvmax.mai < 0.001 & chisq_jvmax.mai >= 0, 
-                                 "<0.001", chisq_jvmax.mai),
-         p_jvmax.mai = ifelse(p_jvmax.mai <0.001 & p_jvmax.mai >= 0, 
-                             "<0.001", p_jvmax.mai)) %>%
-  dplyr::select(treatment, chisq_jvmax.mai, p_jvmax.mai)
+jvmax.mai <- data.frame(Anova(jmax25_vcmax25.mai)) %>%
+  mutate(spp = "Mai",
+         treatment = row.names(.),
+         chisq_jvmax = Chisq,
+         p_jvmax = Pr..Chisq.,
+         across(chisq_jvmax:p_jvmax, \(x) round(x, digits = 3)),
+         chisq_jvmax = ifelse(chisq_jvmax < 0.001 & chisq_jvmax >= 0, 
+                              "<0.001", chisq_jvmax),
+         p_jvmax = ifelse(p_jvmax < 0.001 & p_jvmax >= 0, 
+                          "<0.001", p_jvmax)) %>%
+  dplyr::select(treatment, spp, chisq_jvmax, p_jvmax)
 
-# Concatenate Table 3
-table3 <- vcmax.tri %>% full_join(jmax.tri) %>%  full_join(jvmax.tri) %>% 
-  full_join(vcmax.mai) %>%  full_join(jmax.mai) %>% full_join(jvmax.mai)
-# write.csv(table3, "../tables/TT23_table3.csv", row.names = FALSE)
+# Concatenate Table 5
+vcmax_rbind <- rbind(vcmax.tri, vcmax.mai)
+jmax_rbind <- rbind(jmax.tri, jmax.mai)
+jvmax_rbind <- rbind(jvmax.tri, jvmax.mai)
 
-##############################################################################
-## Write Table S1: Soil nutrients
-##############################################################################
-# Soil inorganic nitrogen
-soil.nitrogen.table <- data.frame(Anova(plant_availableN)) %>%
-  mutate(treatment = row.names(.),
-         chisq_soilN = Chisq,
-         p_soilN = Pr..Chisq.,
-         across(chisq_soilN:p_soilN, \(x) round(x, digits = 3)),
-         chisq_soilN = ifelse(chisq_soilN <0.001 & chisq_soilN >= 0, 
-                              "<0.001", chisq_soilN),
-         p_soilN = ifelse(p_soilN <0.001 & p_soilN >= 0, 
-                          "<0.001", p_soilN)) %>%
-  dplyr::select(treatment, Df, chisq_soilN, p_soilN)
-
-# Soil nitrate availability
-soil.nitrate.table <- data.frame(Anova(nitrate)) %>%
-  mutate(treatment = row.names(.),
-         chisq_nitrate = Chisq,
-         p_nitrate = Pr..Chisq.,
-         across(chisq_nitrate:p_nitrate, \(x) round(x, digits = 3)),
-         chisq_nitrate = ifelse(chisq_nitrate < 0.001 & chisq_nitrate >= 0, 
-                                "<0.001", chisq_nitrate),
-         p_nitrate = ifelse(p_nitrate <0.001 & p_nitrate >= 0, 
-                            "<0.001", p_nitrate)) %>%
-  dplyr::select(treatment, chisq_nitrate, p_nitrate)
-
-# Soil ammonium availability
-soil.ammonium.table <- data.frame(Anova(ammonium)) %>%
-  mutate(treatment = row.names(.),
-         chisq_ammonium = Chisq,
-         p_ammonium = Pr..Chisq.,
-         across(chisq_ammonium:p_ammonium, \(x) round(x, digits = 3)),
-         chisq_ammonium = ifelse(chisq_ammonium < 0.001 & chisq_ammonium >= 0, 
-                                 "<0.001", chisq_ammonium),
-         p_ammonium = ifelse(p_ammonium <0.001 & p_ammonium >= 0, 
-                             "<0.001", p_ammonium)) %>%
-  dplyr::select(treatment, chisq_ammonium, p_ammonium)
-
-# Soil phosphate availability
-soil.phosphate.table <- data.frame(Anova(phosphate)) %>%
-  mutate(treatment = row.names(.),
-         chisq_phosphate = Chisq,
-         p_phosphate = Pr..Chisq.,
-         across(chisq_phosphate:p_phosphate, \(x) round(x, digits = 3)),
-         chisq_phosphate = ifelse(chisq_phosphate < 0.001 & chisq_phosphate >= 0, 
-                                  "<0.001", chisq_phosphate),
-         p_phosphate = ifelse(p_phosphate <0.001 & p_phosphate >= 0, 
-                              "<0.001", p_phosphate)) %>%
-  dplyr::select(treatment, chisq_phosphate, p_phosphate)
-
-# Concatenate table S1
-tableS1 <- soil.nitrogen.table %>% full_join(soil.nitrate.table) %>% 
-  full_join(soil.ammonium.table) %>% full_join(soil.phosphate.table)
-# write.csv(tableS1, "../tables/TT23_table1.csv", row.names = FALSE)
-
-
-##############################################################################
-## Write Table S2: Soil moisture
-##############################################################################
-# Soil moisture
-soil.moisture.table <- data.frame(Anova(sm_model)) %>%
-  mutate(treatment = row.names(.),
-         chisq_soilMoisture = Chisq,
-         p_soilMoisture = Pr..Chisq.,
-         across(chisq_soilMoisture:p_soilMoisture, \(x) round(x, digits = 3)),
-         chisq_soilMoisture = ifelse(chisq_soilMoisture < 0.001 & 
-                                       chisq_soilMoisture >= 0, 
-                                     "<0.001", chisq_soilMoisture),
-         p_soilMoisture = ifelse(p_soilMoisture <0.001 & p_soilMoisture >= 0, 
-                              "<0.001", p_soilMoisture)) %>%
-  dplyr::select(treatment, chisq_soilMoisture, p_soilMoisture)
-
-# Concatenate table S2
-tableS2 <- soil.moisture.table
-# write.csv(tableS2, "../tables/TT23_tableS2.csv", row.names = FALSE)
-
-
-
-
+table5 <- vcmax_rbind %>%
+  full_join(jmax_rbind) %>% full_join(jvmax_rbind)
+# write.csv(table5, "../tables/TT23_table4.csv", row.names = FALSE)
