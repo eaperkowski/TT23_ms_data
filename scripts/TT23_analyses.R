@@ -379,9 +379,12 @@ Anova(spad.tri)
 r.squaredGLMM(spad.tri)
 
 # Pairwise comparisons
-cld(emmeans(spad.tri, pairwise~gm.trt*canopy, type = "response"))
-emmeans(spad.tri, pairwise~gm.trt, type = "response")
-emmeans(spad.tri, pairwise~canopy, type = "response")
+cld(emmeans(spad.tri, pairwise~gm.trt*canopy))
+emmeans(spad.tri, pairwise~gm.trt)
+emmeans(spad.tri, pairwise~canopy)
+
+# % change canopy
+(45.530 - 34.714) / 34.714 * 100
 
 ##############################################################################
 ## Anet - Mai
@@ -408,6 +411,12 @@ r.squaredGLMM(anet.mai)
 emmeans(anet.mai, pairwise~canopy)
 emmeans(anet.mai, pairwise~gm.trt)
 
+# % change canopy
+(4.162 - 10.091) / 10.091 * 100
+
+# % change gm.trt
+(6.667 - 7.586) / 7.586 * 100
+
 ##############################################################################
 ## gsw - Mai
 ##############################################################################
@@ -432,6 +441,12 @@ r.squaredGLMM(gsw.mai)
 # Pairwise comparisons
 emmeans(gsw.mai, pairwise~gm.trt)
 emmeans(gsw.mai, pairwise~canopy)
+
+# % change canopy
+(0.058 - 0.156) / 0.156 * 100
+
+# % change gm.trt
+(0.094 - 0.120) / 0.120 * 100
 
 ##############################################################################
 ## stomatal limitation - Mai
@@ -458,6 +473,12 @@ r.squaredGLMM(l.mai)
 cld(emmeans(l.mai, pairwise~gm.trt*canopy))
 emmeans(l.mai, pairwise~gm.trt)
 emmeans(l.mai, pairwise~canopy)
+
+# % change canopy
+(0.391 - 0.342) / 0.342 * 100
+
+# % change gm.trt
+(0.406 - 0.327) / 0.327 * 100
 
 ##############################################################################
 ## Vcmax25 - Mai
@@ -542,7 +563,10 @@ Anova(spad.mai)
 r.squaredGLMM(spad.mai)
 
 # Pairwise comparisons
-emmeans(spad.mai, pairwise~canopy, type = "response")
+emmeans(spad.mai, pairwise~canopy)
+
+# % change canopy
+(39.769 - 26.955) / 26.955 * 100
 
 ##############################################################################
 ## Write Table 3: Soil nutrients
