@@ -40,6 +40,19 @@ df.soil <- df %>%
 ## Read daily soil moisture dataset
 df.sm <- read.csv("../data/TT23_tomst_probe_sm_daily.csv")
 
+## How many Trillium and Maianthemum individuals?
+unique(subset(df2, spp == "Tri")$id)
+unique(subset(df2, spp == "Mai")$id)
+
+df2 %>% group_by(spp, plot, gm.trt) %>%
+  summarize(n_spp = length(id))
+
+## Mean Vcmax25 for each spp (for discussion section)
+df2 %>%
+  group_by(spp) %>%
+  summarize(vcmax25_mean = mean(vcmax25, na.rm = TRUE),
+            vcmax25_sd = sd(vcmax25, na.rm = TRUE))
+
 ##############################################################################
 ## N availability (nitrate + ammonium)
 ##############################################################################
@@ -308,6 +321,12 @@ cld(emmeans(vcmax25.tri, pairwise~gm.trt*canopy, type = "response"))
 emmeans(vcmax25.tri, pairwise~gm.trt, type = "response")
 emmeans(vcmax25.tri, pairwise~canopy, type = "response")
 
+# % change gm.trt
+(47.452 - 51.209) / 51.209 * 100
+
+# % change canopy
+(24.023 - 101.152) / 101.152 * 100
+
 ##############################################################################
 ## Jmax25 - Tri
 ##############################################################################
@@ -334,6 +353,12 @@ cld(emmeans(jmax25.tri, pairwise~gm.trt*canopy, type = "response"))
 emmeans(jmax25.tri, pairwise~gm.trt, type = "response")
 emmeans(jmax25.tri, pairwise~canopy, type = "response")
 
+# % change gm.trt
+(85.409 - 94.635) / 94.635 * 100
+
+# % change canopy
+(45.298 - 178.433) / 178.433 * 100
+
 ##############################################################################
 ## Jmax25:Vcmax25 - Tri
 ##############################################################################
@@ -356,8 +381,14 @@ Anova(jmax25_vcmax25.tri)
 r.squaredGLMM(jmax25_vcmax25.tri)
 
 # Pairwise comparisons
-emmeans(jmax25_vcmax25.tri, pairwise~gm.trt, type = "response")
-emmeans(jmax25_vcmax25.tri, pairwise~canopy, type = "response")
+emmeans(jmax25_vcmax25.tri, pairwise~gm.trt)
+emmeans(jmax25_vcmax25.tri, pairwise~canopy)
+
+# % change gm.trt
+(1.790 - 1.852) / 1.852 * 100
+
+# % change canopy
+(1.871 - 1.770) / 1.770 * 100
 
 ##############################################################################
 ## SPAD - Tri
@@ -502,6 +533,9 @@ r.squaredGLMM(vcmax25.mai)
 # Pairwise comparisons
 emmeans(vcmax25.mai, pairwise~canopy, type = "response")
 
+# % change canopy
+(26.032 - 59.038) / 59.038 * 100
+
 ##############################################################################
 ## Jmax25 - Tri
 ##############################################################################
@@ -523,6 +557,9 @@ r.squaredGLMM(jmax25.mai)
 
 # Pairwise comparisons
 emmeans(jmax25.mai, pairwise~canopy, type = "response")
+
+# % change canopy
+(45.161 - 105.718) / 105.718 * 100
 
 ##############################################################################
 ## Jmax25:Vcmax25 - Tri
