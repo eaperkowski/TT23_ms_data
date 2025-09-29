@@ -1,5 +1,5 @@
 # TT23_ms_data
-Data and code for "Negative effects of allelopathic plant invasion intensify as the growth season progresses" by Perkowski et al. (in prep). Manuscript is currently in final preparations for submission.
+Data and code for "Negative effects of allelopathic plant invasion intensify as the growth season progresses" by Perkowski et al. (in prep). Manuscript is currently in review at Functional Ecology.
 
 Repository contents:
 
