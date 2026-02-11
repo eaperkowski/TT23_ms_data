@@ -422,7 +422,7 @@ emmeans(spad.tri, pairwise~canopy)
 ##############################################################################
 df2$anet[43] <- NA
 
-anet.mai <- lmer(anet ~ gm.trt * canopy + (1 | plot) + (1 | id), 
+anet.mai <- lmer(log(anet) ~ gm.trt * canopy + (1 | plot) + (1 | id), 
                  data = subset(df2, spp == "Mai"))
 
 # Check model assumptions
@@ -439,21 +439,22 @@ Anova(anet.mai)
 r.squaredGLMM(anet.mai)
 
 # Pairwise comparisons
-emmeans(anet.mai, pairwise~canopy)
-emmeans(anet.mai, pairwise~gm.trt)
+emmeans(anet.mai, pairwise~canopy, type = "response")
+emmeans(anet.mai, pairwise~gm.trt, type = "response")
+cld(emmeans(anet.mai, pairwise~canopy*gm.trt, type = "response"))
 
 # % change canopy
-(4.162 - 10.091) / 10.091 * 100
+(3.806 - 9.96) / 9.96 * 100
 
 # % change gm.trt
-(6.667 - 7.586) / 7.586 * 100
+(5.50 - 6.89) / 6.89 * 100
 
 ##############################################################################
 ## gsw - Mai
 ##############################################################################
 df2$gsw[43] <- NA
 
-gsw.mai <- lmer(gsw ~ gm.trt * canopy + (1 | plot) + (1 | id), 
+gsw.mai <- lmer(log(gsw) ~ gm.trt * canopy + (1 | plot) + (1 | id), 
                 data = subset(df2, spp == "Mai"))
 
 # Check model assumptions

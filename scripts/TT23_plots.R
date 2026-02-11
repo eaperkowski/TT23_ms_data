@@ -335,8 +335,8 @@ sm_plot <- ggplot(data = sm_means, aes(x = doy, y = vwc_mean)) +
               aes(x = doy, y = emmean, ymin = emmean - SE,
                   ymax = emmean + SE, fill = gm.trt),
               alpha = 0.1) +
-  scale_color_manual(values = gm.colors) +
-  scale_fill_manual(values = gm.colors) +
+  scale_color_manual(values = c("#F1B700", "#00B2BE")) +
+  scale_fill_manual(values = c("#F1B700", "#00B2BE")) +
   scale_y_continuous(limits = c(0.1, 0.42), 
                      breaks = seq(0.1, 0.4, 0.1)) +
   scale_x_continuous(breaks = seq(116, 181, 13),
@@ -959,3 +959,160 @@ ggarrange(spad_tri_plot, spad_mai_plot,
           align = "hv", font.label = list(size = 18), hjust = 0,
           labels = c("(a)", "(b)"))
 dev.off()
+
+
+
+##############################################################################
+## Figures for Susan
+##############################################################################
+anet_tri_closed_results <- cld(emmeans(anet.tri, ~canopy_plot*gm.trt, type = "response"), 
+                        Letters = LETTERS, reversed = TRUE) %>% 
+  data.frame() %>% 
+  filter(canopy_plot == "closed (June)") %>%
+  mutate(canopy = "closed",
+         .group = c("A", "B"))
+
+anet_tri_closed_plot <- ggplot(data = subset(df2, spp == "Tri" & canopy == "closed"),
+                        aes(x = gm.trt, y = anet, fill = gm.trt)) +
+  stat_boxplot(linewidth = 0.75, geom = "errorbar", width = 0.25, 
+               position = position_dodge(width = 0.75)) +
+  geom_boxplot(position = position_dodge(0.75),
+               width = 0.5, outlier.shape = NA) +
+  geom_point(position = position_jitterdodge(dodge.width = 0.75, 
+                                             jitter.width = 0.1),
+             alpha = 0.5, size = 2.5, shape = 21) +
+  geom_text(data = anet_tri_closed_results, 
+            aes(y = 8, label = .group),
+            position = position_dodge(width = 0.75), 
+            fontface = "bold", size = 6) +
+  scale_fill_manual(values = gm.colors) +
+  scale_x_discrete(labels = label_wrap(10)) +
+  scale_y_continuous(limits = c(0, 8), breaks = seq(0, 8, 2)) +
+  labs(x = expression(bolditalic("A. petiolata")*bold(" treatment")),
+       y = expression(bold(italic("A")["net"]*" ("*mu*"mol m"^"-2"*" s"^"-1"*")"))) +
+  guides(fill = "none") +
+  facet_grid(~spp, labeller = labeller(spp = facet.labs)) +
+  theme_classic(base_size = 18) +
+  theme(axis.title = element_text(face = "bold"),
+        legend.title = element_text(face = "bold"),
+        legend.text = element_text(hjust = 0),
+        strip.background = element_blank(),
+        strip.text = element_text(face = "bold.italic", size = 18),
+        panel.grid.minor.y = element_blank())
+
+
+vcmax_tri_closed_results <- cld(emmeans(vcmax25.tri, ~canopy_plot*gm.trt, type = "response"), 
+                         Letters = LETTERS, reversed = TRUE) %>% 
+  data.frame() %>% 
+  filter(canopy_plot == "closed (June)") %>%
+  mutate(canopy = "closed",
+         .group = c("A", "B"))
+
+vcmax_tri_closed_plot <- ggplot(data = subset(df2, spp == "Tri" & canopy == "closed"),
+                         aes(x = gm.trt, y = vcmax25, fill = gm.trt)) +
+  stat_boxplot(linewidth = 0.75, geom = "errorbar", width = 0.25, 
+               position = position_dodge(width = 0.75)) +
+  geom_boxplot(position = position_dodge(0.75),
+               width = 0.5, outlier.shape = NA) +
+  geom_point(position = position_jitterdodge(dodge.width = 0.75, 
+                                             jitter.width = 0.1),
+             alpha = 0.5, size = 2.5, shape = 21) +
+  geom_text(data = vcmax_tri_results, 
+            aes(y = 40, group = gm.trt, label = .group),
+            position = position_dodge(width = 0.75), 
+            fontface = "bold", size = 6) +
+  scale_fill_manual(values = gm.colors) +
+  scale_x_discrete(labels = label_wrap(5)) +
+  scale_y_continuous(limits = c(10, 40), breaks = seq(10, 40, 10)) +
+  labs(x = expression(bolditalic("A. petiolata")*bold(" treatment")),
+       y = expression(bold(italic("V")["cmax25"]*" ("*mu*"mol m"^"-2"*" s"^"-1"*")"))) +
+  guides(fill = "none") +
+  facet_grid(~spp, labeller = labeller(spp = facet.labs)) +
+  theme_classic(base_size = 18) +
+  theme(axis.title = element_text(face = "bold"),
+        legend.title = element_text(face = "bold"),
+        legend.text = element_text(hjust = 0),
+        strip.background = element_blank(),
+        strip.text = element_text(face = "bold.italic", size = 18),
+        panel.grid.minor.y = element_blank())
+vcmax_tri_closed_plot
+
+
+anet_mai_closed_results <- cld(emmeans(anet.mai, ~canopy_plot*gm.trt, type = "response"), 
+                               Letters = LETTERS, reversed = TRUE) %>% 
+  data.frame() %>% 
+  filter(canopy_plot == "closed (June)") %>%
+  mutate(canopy = "closed",
+         .group = c("A", "B"))
+
+anet_mai_closed_plot <- ggplot(data = subset(df2, spp == "Mai" & canopy == "closed"),
+                               aes(x = gm.trt, y = anet, fill = gm.trt)) +
+  stat_boxplot(linewidth = 0.75, geom = "errorbar", width = 0.25, 
+               position = position_dodge(width = 0.75)) +
+  geom_boxplot(position = position_dodge(0.75),
+               width = 0.5, outlier.shape = NA) +
+  geom_point(position = position_jitterdodge(dodge.width = 0.75, 
+                                             jitter.width = 0.1),
+             alpha = 0.5, size = 2.5, shape = 21) +
+  geom_text(data = anet_mai_closed_results, 
+            aes(y = 8, label = .group),
+            position = position_dodge(width = 0.75), 
+            fontface = "bold", size = 6) +
+  scale_fill_manual(values = gm.colors) +
+  scale_x_discrete(labels = label_wrap(10)) +
+  scale_y_continuous(limits = c(0, 8), breaks = seq(0, 8, 2)) +
+  labs(x = expression(bolditalic("A. petiolata")*bold(" treatment")),
+       y = expression(bold(italic("A")["net"]*" ("*mu*"mol m"^"-2"*" s"^"-1"*")"))) +
+  guides(fill = "none") +
+  facet_grid(~spp, labeller = labeller(spp = facet.labs)) +
+  theme_classic(base_size = 18) +
+  theme(axis.title = element_text(face = "bold"),
+        legend.title = element_text(face = "bold"),
+        legend.text = element_text(hjust = 0),
+        strip.background = element_blank(),
+        strip.text = element_text(face = "bold.italic", size = 18),
+        panel.grid.minor.y = element_blank())
+
+gsw_mai_closed_results <- cld(emmeans(gsw.mai, pairwise~canopy_plot*gm.trt, type = "response"), 
+                       Letters = LETTERS, reversed = TRUE, alpha = 0.075) %>% 
+  data.frame() %>% 
+  filter(canopy_plot == "closed (June)") %>%
+  mutate(canopy = "closed",
+         .group = c("A", "B"))
+
+gsw_mai_closed_plot <- ggplot(data = subset(df2, spp == "Mai" & canopy == "closed"),
+                       aes(x = gm.trt, y = gsw, fill = gm.trt)) +
+  stat_boxplot(linewidth = 0.75, geom = "errorbar", width = 0.25, 
+               position = position_dodge(width = 0.75)) +
+  geom_boxplot(position = position_dodge(0.75),
+               width = 0.5, outlier.shape = NA) +
+  geom_point(position = position_jitterdodge(dodge.width = 0.75, 
+                                             jitter.width = 0.1),
+             alpha = 0.5, size = 2.5, shape = 21) +
+  geom_text(data = gsw_mai_closed_results, 
+            aes(y = 0.15, label = .group),
+            position = position_dodge(width = 0.75), 
+            fontface = "bold", size = 6) +
+  scale_fill_manual(values = gm.colors) +
+  scale_x_discrete(labels = label_wrap(5)) +
+  scale_y_continuous(limits = c(0, 0.15), breaks = seq(0, 0.15, 0.05)) +
+  labs(x = expression(bolditalic("A. petiolata")*bold(" treatment")),
+       y = expression(bold("Stomatal cond. (mol m"^"-2"*" s"^"-1"*")"))) +
+  facet_grid(~spp, labeller = labeller(spp = facet.labs)) +
+  guides(fill = "none") +
+  theme_classic(base_size = 18) +
+  theme(axis.title = element_text(face = "bold"),
+        legend.title = element_text(face = "bold"),
+        legend.text = element_text(hjust = 0),
+        strip.background = element_blank(),
+        strip.text = element_text(face = "bold.italic", size = 18),
+        panel.grid.minor.y = element_blank())
+gsw_mai_closed_plot
+
+png("../plots/TT23_photosynthesis_for_susan.png", width = 10, height = 10,
+    units = "in", res = 600)
+ggarrange(anet_tri_closed_plot, vcmax_tri_closed_plot,
+          anet_mai_closed_plot, gsw_mai_closed_plot,
+          nrow = 2, ncol = 2, common.legend = TRUE)
+dev.off()
+
