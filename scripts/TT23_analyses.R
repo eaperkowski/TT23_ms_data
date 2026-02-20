@@ -195,8 +195,7 @@ emmeans(n_to_p_ratio, pairwise~canopy, type = "response")
 ##############################################################################
 ## Soil moisture (time series) 
 ##############################################################################
-sm_model <- lmer(daily_vwc ~ gm.trt * doy + (1 | plot),
-                 data = df.sm)
+sm_model <- lmer(daily_vwc ~ gm.trt * doy + (1 | plot), data = df.sm)
 
 # Check model assumptions
 plot(sm_model)
@@ -298,10 +297,8 @@ emmeans(l.tri, pairwise~canopy)
 ##############################################################################
 ## Vcmax25 - Tri
 ##############################################################################
-df2$vcmax25[c(67, 96)] <- NA
-
 vcmax25.tri <- lmer(log(vcmax25) ~ gm.trt * canopy + (1 | plot) + (1 | id), 
-                    data = subset(df2, spp == "Tri"))
+                    data = subset(df2, spp == "Tri" & id != "4414" & id != "2988"))
 
 # Check model assumptions
 plot(vcmax25.tri)
@@ -330,10 +327,8 @@ emmeans(vcmax25.tri, pairwise~canopy, type = "response")
 ##############################################################################
 ## Jmax25 - Tri
 ##############################################################################
-df2$jmax25[c(67, 96)] <- NA
-
 jmax25.tri <- lmer(log(jmax25) ~ gm.trt * canopy + (1 | plot) + (1 | id), 
-                   data = subset(df2, spp == "Tri"))
+                   data = subset(df2, spp == "Tri" & id != "4414" & id != "2988"))
 
 # Check model assumptions
 plot(jmax25.tri)
@@ -362,10 +357,8 @@ emmeans(jmax25.tri, pairwise~canopy, type = "response")
 ##############################################################################
 ## Jmax25:Vcmax25 - Tri
 ##############################################################################
-df2$jmax.vcmax[c(97)] <- NA
-
 jmax25_vcmax25.tri <- lmer(jmax.vcmax ~ gm.trt * canopy + (1 | plot) + (1 | id), 
-                           data = subset(df2, spp == "Tri"))
+                           data = subset(df2, spp == "Tri"  & id != "4431"))
 
 # Check model assumptions
 plot(jmax25_vcmax25.tri)
@@ -420,10 +413,8 @@ emmeans(spad.tri, pairwise~canopy)
 ##############################################################################
 ## Anet - Mai
 ##############################################################################
-df2$anet[43] <- NA
-
-anet.mai <- lmer(log(anet) ~ gm.trt * canopy + (1 | plot) + (1 | id), 
-                 data = subset(df2, spp == "Mai"))
+anet.mai <- lmer(anet ~ gm.trt * canopy + (1 | plot) + (1 | id), 
+                 data = subset(df2, spp == "Mai" & id != "5069"))
 
 # Check model assumptions
 plot(anet.mai)
@@ -452,10 +443,8 @@ cld(emmeans(anet.mai, pairwise~canopy*gm.trt, type = "response"))
 ##############################################################################
 ## gsw - Mai
 ##############################################################################
-df2$gsw[43] <- NA
-
-gsw.mai <- lmer(log(gsw) ~ gm.trt * canopy + (1 | plot) + (1 | id), 
-                data = subset(df2, spp == "Mai"))
+gsw.mai <- lmer(gsw ~ gm.trt * canopy + (1 | plot) + (1 | id), 
+                data = subset(df2, spp == "Mai" & id != "5069"))
 
 # Check model assumptions
 plot(gsw.mai)
@@ -473,6 +462,8 @@ r.squaredGLMM(gsw.mai)
 # Pairwise comparisons
 emmeans(gsw.mai, pairwise~gm.trt)
 emmeans(gsw.mai, pairwise~canopy)
+emmeans(gsw.mai, pairwise~canopy*gm.trt)
+
 
 # % change canopy
 (0.058 - 0.156) / 0.156 * 100
@@ -483,9 +474,7 @@ emmeans(gsw.mai, pairwise~canopy)
 ##############################################################################
 ## stomatal limitation - Mai
 ##############################################################################
-df2$l[68] <- NA
-
-l.mai <- lmer(l ~ gm.trt * canopy + (1 | plot) + (1 | id), 
+l.mai <- lmer(log(l) ~ gm.trt * canopy + (1 | plot) + (1 | id), 
               data = subset(df2, spp == "Mai"))
 
 # Check model assumptions
@@ -502,15 +491,15 @@ Anova(l.mai)
 r.squaredGLMM(l.mai)
 
 # Pairwise comparisons
-cld(emmeans(l.mai, pairwise~gm.trt*canopy))
-emmeans(l.mai, pairwise~gm.trt)
-emmeans(l.mai, pairwise~canopy)
-
-# % change canopy
-(0.391 - 0.342) / 0.342 * 100
+cld(emmeans(l.mai, pairwise~gm.trt*canopy, type = "response"))
+emmeans(l.mai, pairwise~gm.trt, type = "response")
+emmeans(l.mai, pairwise~canopy, type = "response")
 
 # % change gm.trt
-(0.406 - 0.327) / 0.327 * 100
+(0.398 - 0.321) / 0.321 * 100
+
+# % change canopy
+(0.383 - 0.335) / 0.335 * 100
 
 ##############################################################################
 ## Vcmax25 - Mai

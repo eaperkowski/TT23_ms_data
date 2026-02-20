@@ -53,14 +53,6 @@ df.soil <- df %>%
 ## Read daily soil moisture dataset
 df.sm <- read.csv("../data/TT23_tomst_probe_sm_daily.csv")
 
-## Remove outliers
-df2$anet[43] <- NA
-df2$gsw[43] <- NA
-df2$l[68] <- NA
-df2$vcmax25[c(67, 96)] <- NA
-df2$jmax25[c(67, 96)] <- NA
-df2$jmax.vcmax[c(97)] <- NA
-
 ## Create models for soil data
 nitrate <- lmer(
   nitrate_ppm ~ gm.trt * canopy_plot + (1 | plot), data = df.soil)
@@ -91,24 +83,24 @@ l.tri <- lmer(l ~ gm.trt * canopy_plot + (1 | plot) + (1 | id),
               data = subset(df2, spp == "Tri"))
 
 vcmax25.tri <- lmer(log(vcmax25) ~ gm.trt * canopy_plot + (1 | plot) + (1 | id), 
-                    data = subset(df2, spp == "Tri"))
+                    data = subset(df2, spp == "Tri" & id != "4414" & id != "2988"))
 
 jmax25.tri <- lmer(log(jmax25) ~ gm.trt * canopy_plot + (1 | plot) + (1 | id), 
-                   data = subset(df2, spp == "Tri"))
+                   data = subset(df2, spp == "Tri" & id != "4414" & id != "2988"))
 
 jmax25_vcmax25.tri <- lmer(jmax.vcmax ~ gm.trt * canopy_plot + (1 | plot) + (1 | id), 
-                           data = subset(df2, spp == "Tri"))
+                           data = subset(df2, spp == "Tri"  & id != "4431"))
 
 spad.tri <- lmer(SPAD ~ gm.trt * canopy_plot + (1 | plot) + (1 | id), 
                  data = subset(df2, spp == "Tri"))
 
 anet.mai <- lmer(anet ~ gm.trt * canopy_plot + (1 | plot) + (1 | id), 
-                 data = subset(df2, spp == "Mai"))
+                 data = subset(df2, spp == "Mai" & id != "5069"))
 
 gsw.mai <- lmer(gsw ~ gm.trt * canopy_plot + (1 | plot) + (1 | id), 
-                data = subset(df2, spp == "Mai"))
+                data = subset(df2, spp == "Mai" & id != "5069"))
 
-l.mai <- lmer(l ~ gm.trt * canopy_plot + (1 | plot) + (1 | id), 
+l.mai <- lmer(log(l) ~ gm.trt * canopy_plot + (1 | plot) + (1 | id), 
               data = subset(df2, spp == "Mai"))
 
 vcmax25.mai <- lmer(log(vcmax25) ~ gm.trt * canopy_plot + (1 | plot) + (1 | id), 
@@ -398,7 +390,7 @@ anet_tri_plot
 Anova(anet.mai)
 
 anet_mai_results <- cld(emmeans(anet.mai, pairwise~canopy_plot*gm.trt, type = "response"), 
-                        Letters = LETTERS, reversed = TRUE, alpha = 0.2) %>% 
+                        Letters = LETTERS, reversed = TRUE) %>% 
   data.frame() %>% mutate(.group = trimws(.group, "both"))
 
 anet_mai_plot <- ggplot(data = subset(df2, spp == "Mai"),
@@ -475,7 +467,7 @@ gsw_tri_plot
 Anova(gsw.mai)
 
 gsw_mai_results <- cld(emmeans(gsw.mai, pairwise~canopy_plot*gm.trt, type = "response"), 
-                        Letters = LETTERS, reversed = TRUE, alpha = 0.075) %>% 
+                        Letters = LETTERS, reversed = TRUE) %>% 
   data.frame() %>% mutate(.group = trimws(.group, "both"))
 
 gsw_mai_plot <- ggplot(data = subset(df2, spp == "Mai"),
@@ -550,7 +542,7 @@ l_tri_plot
 ##############################################################################
 Anova(l.mai)
 
-l_mai_results <- cld(emmeans(l.mai, ~canopy_plot*gm.trt, type = "response"), 
+l_mai_results <- cld(emmeans(l.mai, pairwise~canopy_plot*gm.trt, type = "response"), 
                        Letters = LETTERS) %>% 
   data.frame() %>% mutate(.group = trimws(.group, "both"))
 
@@ -587,10 +579,10 @@ l_mai_plot
 ##############################################################################
 ## Vcmax - Tri
 ##############################################################################
-Anova(vcmax.tri)
+Anova(vcmax25.tri)
 
 vcmax_tri_results <- cld(emmeans(vcmax25.tri, pairwise~canopy_plot*gm.trt, type = "response"), 
-                         Letters = LETTERS, reversed = TRUE, alpha = 0.07) %>% 
+                         Letters = LETTERS, reversed = TRUE) %>% 
   data.frame() %>% mutate(.group = trimws(.group, "both"))
 
 vcmax_tri_plot <- ggplot(data = subset(df2, spp == "Tri"),
@@ -664,7 +656,7 @@ vcmax_mai_plot
 ##############################################################################
 ## Jmax - Tri
 ##############################################################################
-Anova(jmax.tri)
+Anova(jmax25.tri)
 
 jmax_tri_results <- cld(emmeans(jmax25.tri, ~gm.trt*canopy_plot, type = "response"), 
                          Letters = LETTERS, reversed = TRUE) %>% 
@@ -703,7 +695,7 @@ jmax_tri_plot
 ##############################################################################
 ## Jmax - Mai
 ##############################################################################
-Anova(jmax.mai)
+Anova(jmax25.mai)
 
 jmax_mai_results <- cld(emmeans(jmax25.mai, ~gm.trt*canopy_plot, type = "response"), 
                          Letters = LETTERS, reversed = TRUE) %>% 
@@ -741,7 +733,7 @@ jmax_mai_plot
 ##############################################################################
 ## Jmax: Vcmax - Tri
 ##############################################################################
-Anova(jmax.vcmax.tri)
+Anova(jmax25.vcmax25.tri)
 
 jvmax_tri_results <- cld(emmeans(jmax25_vcmax25.tri, ~gm.trt*canopy_plot, type = "response"), 
                         Letters = LETTERS) %>% 
@@ -779,7 +771,7 @@ jvmax_tri_plot
 ##############################################################################
 ## Jmax:Vcmax - Mai
 ##############################################################################
-Anova(jmax.vcmax.mai)
+Anova(jmax25_vcmax25.mai)
 
 jvmax_mai_results <- cld(emmeans(jmax25_vcmax25.mai, ~gm.trt*canopy_plot, type = "response"), 
                         Letters = LETTERS, reversed = TRUE) %>% 
