@@ -736,7 +736,7 @@ jmax_mai_plot
 ##############################################################################
 ## Jmax: Vcmax - Tri
 ##############################################################################
-Anova(jmax25.vcmax25.tri)
+Anova(jmax25_vcmax25.tri)
 
 jvmax_tri_results <- cld(emmeans(jmax25_vcmax25.tri, ~gm.trt*canopy_plot, type = "response"), 
                         Letters = LETTERS) %>% 
@@ -900,7 +900,6 @@ ggarrange(nitrogen_plot, phosphate_plot,
           align = "hv", labels = c("(a)", "(b)", "(c)", "(d)"), 
           font.label = list(size = 18))
 dev.off()
-
 
 ##############################################################################
 ## Figure 2: Gas exchange
