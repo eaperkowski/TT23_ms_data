@@ -156,6 +156,7 @@ nitrate_plot <- ggplot(data = df.soil,
        fill = expression(bolditalic("Alliaria")*bold(" treatment"))) +
   theme_classic(base_size = 18) +
   theme(axis.title = element_text(face = "bold"),
+        axis.title.y = element_text(size = 16),
         legend.title = element_text(face = "bold"),
         panel.grid.minor.y = element_blank())
 nitrate_plot
@@ -190,6 +191,7 @@ ammonium_plot <- ggplot(data = df.soil,
        fill = expression(bolditalic("Alliaria")*bold(" treatment"))) +
   theme_classic(base_size = 18) +
   theme(axis.title = element_text(face = "bold"),
+        axis.title.y = element_text(size = 16),
         legend.title = element_text(face = "bold"),
         panel.grid.minor.y = element_blank())
 ammonium_plot
@@ -340,6 +342,7 @@ sm_plot <- ggplot(data = sm_means, aes(x = doy, y = vwc_mean)) +
   theme_classic(base_size = 18) +
   theme(axis.title = element_text(face = "bold"),
         axis.text.x = element_text(size = 12),
+        axis.title.y = element_text(size = 16),
         legend.title = element_text(face = "bold"),
         legend.text = element_text(hjust = 0),
         panel.grid.minor.y = element_blank())
@@ -888,7 +891,7 @@ spad_mai_plot
 ##############################################################################
 ## Figure 1: Soil nutrients 
 ##############################################################################
-png("../plots/TT23_fig1_soilNutrients.png", width = 8.5, height = 10,
+png("../plots/TT23_fig1_soilNutrients.png", width = 9, height = 10,
     units = "in", res = 600)
 ggarrange(nitrogen_plot, phosphate_plot, 
           soil_np_plot, sm_plot,
@@ -898,18 +901,11 @@ ggarrange(nitrogen_plot, phosphate_plot,
           font.label = list(size = 18))
 dev.off()
 
-##############################################################################
-## Figure 2: Soil moisture
-##############################################################################
-png("../plots/TT23_fig2_soilMoisture.png",
-    width = 8, height = 4.5, units = "in", res = 600)
-sm_plot
-dev.off()
 
 ##############################################################################
-## Figure 3: Gas exchange
+## Figure 2: Gas exchange
 ##############################################################################
-png("../plots/TT23_fig3_gasExchange.png", width = 8, height = 12.5,
+png("../plots/TT23_fig2_gasExchange.png", width = 8, height = 12.5,
     units = "in", res = 600)
 ggarrange(anet_tri_plot, anet_mai_plot, gsw_tri_plot, gsw_mai_plot,
           l_tri_plot, l_mai_plot, common.legend = TRUE, 
@@ -919,9 +915,9 @@ ggarrange(anet_tri_plot, anet_mai_plot, gsw_tri_plot, gsw_mai_plot,
 dev.off()
 
 ##############################################################################
-## Figure 4: Photosynthetic capacity
+## Figure 3: Photosynthetic capacity
 ##############################################################################
-png("../plots/TT23_fig4_photoCapacity.png", 
+png("../plots/TT23_fig3_photoCapacity.png", 
     width = 8, height = 12.5, units = "in", res = 600)
 ggarrange(vcmax_tri_plot, vcmax_mai_plot, jmax_tri_plot, jmax_mai_plot, 
           jvmax_tri_plot, jvmax_mai_plot, common.legend = TRUE, 
