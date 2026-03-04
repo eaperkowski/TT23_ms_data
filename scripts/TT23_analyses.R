@@ -680,7 +680,7 @@ soil.moisture.table <- data.frame(Anova(sm_model)) %>%
 table3 <- rbind(soil.nitrogen.table, soil.nitrate.table,
                 soil.ammonium.table, soil.phosphate.table,
                 soil.np.table, soil.moisture.table)
-write.csv(table3, "../tables/TT23_table3.csv", row.names = FALSE)
+## write.csv(table3, "../tables/TT23_table3.csv", row.names = FALSE)
 
 ##############################################################################
 ## Write Table 4: Gas exchange
@@ -800,7 +800,7 @@ spad_rbind <- rbind(spad.tri.table, spad.mai.table)
 
 table4 <- anet_rbind %>% full_join(gsw_rbind) %>%
   full_join(l_rbind) %>% full_join(spad_rbind)
-# write.csv(table4, "../tables/TT23_table4.csv", row.names = FALSE)
+## write.csv(table4, "../tables/TT23_table4.csv", row.names = FALSE)
 
 ##############################################################################
 ## Write Table 45: Indices of photosynthetic capacity
@@ -893,4 +893,4 @@ jvmax_rbind <- rbind(jvmax.tri, jvmax.mai)
 
 table5 <- vcmax_rbind %>%
   full_join(jmax_rbind) %>% full_join(jvmax_rbind)
-# write.csv(table5, "../tables/TT23_table4.csv", row.names = FALSE)
+## write.csv(table5, "../tables/TT23_table5.csv", row.names = FALSE)
