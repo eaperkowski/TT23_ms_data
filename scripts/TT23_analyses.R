@@ -102,7 +102,7 @@ Anova(phosphate)
 r.squaredGLMM(phosphate)
 
 # Pairwise comparisons
-emmeans(phosphate, pairwise~canopy)
+cld(emmeans(phosphate, pairwise~canopy))
 emmeans(phosphate, pairwise~gm.trt)
 
 # % change canopy
