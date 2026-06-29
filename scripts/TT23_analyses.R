@@ -407,8 +407,12 @@ cld(emmeans(spad.tri, pairwise~gm.trt*canopy))
 emmeans(spad.tri, pairwise~gm.trt)
 emmeans(spad.tri, pairwise~canopy)
 
-# % change canopy
-(45.530 - 34.714) / 34.714 * 100
+# % change canopy (ambient)
+(33.455 - 46.917) / 46.917 * 100
+
+# % change canopy (weeded)
+(35.973 - 44.144) / 44.144 * 100
+
 
 ##############################################################################
 ## Anet - Mai
@@ -527,7 +531,7 @@ emmeans(vcmax25.mai, pairwise~canopy, type = "response")
 (26.032 - 59.038) / 59.038 * 100
 
 ##############################################################################
-## Jmax25 - Tri
+## Jmax25 - Mai
 ##############################################################################
 jmax25.mai <- lmer(log(jmax25) ~ gm.trt * canopy + (1 | plot) + (1 | id), 
                    data = subset(df2, spp == "Mai"))
@@ -552,10 +556,10 @@ emmeans(jmax25.mai, pairwise~canopy, type = "response")
 (45.161 - 105.718) / 105.718 * 100
 
 ##############################################################################
-## Jmax25:Vcmax25 - Tri
+## Jmax25:Vcmax25 - Mai
 ##############################################################################
 jmax25_vcmax25.mai <- lmer(jmax.vcmax ~ gm.trt * canopy + (1 | plot) + (1 | id), 
-                           data = subset(df2, spp == "Mai"))
+                           data = subset(df2, spp == "Tri"))
 
 # Check model assumptions
 plot(jmax25_vcmax25.mai)
